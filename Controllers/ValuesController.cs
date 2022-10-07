@@ -13,20 +13,20 @@ namespace B040.Authentication.Controllers
     [Authorize]
     public class ValuesController : ApiController
     {
-        [AllowAnonymous]
-        [HttpGet]
-        [Route("Admin/GetAllUsers")]
-        public List<ApplicationUser> GetAllUsers()
-        {
-            // List<ApplicationUser> users = new List<ApplicationUser>();
-            var ctx = new ApplicationDbContext();
+        //[AllowAnonymous]
+        //[HttpGet]
+        //[Route("Admin/GetAllUsers")]
+        //public List<ApplicationUser> GetAllUsers()
+        //{
+        //    // List<ApplicationUser> users = new List<ApplicationUser>();
+        //    var ctx = new ApplicationDbContext();
  
-                //var userStore = new UserStore<ApplicationUser>(ctx);
-                //var userManager = new UserManager<ApplicationUser>(userStore);
-            var users = ctx.Users.ToList();
+        //        //var userStore = new UserStore<ApplicationUser>(ctx);
+        //        //var userManager = new UserManager<ApplicationUser>(userStore);
+        //    var users = ctx.Users.ToList();
         
-            return users;
-        }
+        //    return users;
+        //}
         // GET api/values
         public IEnumerable<string> Get()
         {
@@ -54,5 +54,24 @@ namespace B040.Authentication.Controllers
         public void Delete(int id)
         {
         }
+    //    [AllowAnonymous]
+    //    [HttpPost]
+    //    [Route("Admin/CreateRoles")]
+    //    public void CreateRolesOnce()
+    //    {
+    //        using (var ctx = new ApplicationDbContext())
+    //        {
+    //            process("Admin");
+    //            process("Client");
+    //            void process(string roleName)
+    //            {
+    //                if (ctx.Roles.Any(x => x.Name == roleName)) { return; }
+    //                var r = new IdentityRole() { Name = roleName };
+    //                ctx.Roles.Add(r);
+    //                ctx.SaveChanges();
+    //            }
+    //        }
+    //    }
     }
 }
+

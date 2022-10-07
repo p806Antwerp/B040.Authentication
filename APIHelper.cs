@@ -1,9 +1,11 @@
 ﻿using B040.Authentication.Models;
+using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.VisualBasic.ApplicationServices;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
@@ -61,12 +63,43 @@ namespace B040.Authentication
         }
         public async Task<List<ApplicationUser>> GetUsersAsync()
         {
-            using (HttpResponseMessage response = await _APIClient.GetAsync("/Admin/GetAllUsers"))
+            using (HttpResponseMessage response = await _APIClient.GetAsync("/api/B040/Admin/GetAllUsers"))
             {
                 if (response.IsSuccessStatusCode)
                 {
                     var result = await response.Content.ReadAsAsync<List<ApplicationUser>>();
                     return result;
+                }
+                else
+                {
+                    throw new Exception(response.ReasonPhrase);
+                }
+            }
+        }
+        public async Task<List<IdentityRole>> GetRolesAsync()
+        {
+            using (HttpResponseMessage response = await _APIClient.GetAsync("/api/B040/Admin/GetAllRoles"))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadAsAsync<List<IdentityRole>>();
+                    return result;
+                }
+                else
+                {
+                    throw new Exception(response.ReasonPhrase);
+                }
+            }
+        }
+        public async Task CreateRolesAsync()
+        {
+           
+            using (HttpResponseMessage response = await _APIClient.PostAsJsonAsync("/api/B040/Admin/CreateRoles","[{}]"))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadAsAsync(null);
+                    return ;
                 }
                 else
                 {
