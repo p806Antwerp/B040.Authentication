@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNet.Identity;
+﻿using B040.Authentication.Models;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +13,20 @@ namespace B040.Authentication.Controllers
     [Authorize]
     public class ValuesController : ApiController
     {
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("Admin/GetAllUsers")]
+        public List<ApplicationUser> GetAllUsers()
+        {
+            // List<ApplicationUser> users = new List<ApplicationUser>();
+            var ctx = new ApplicationDbContext();
+ 
+                //var userStore = new UserStore<ApplicationUser>(ctx);
+                //var userManager = new UserManager<ApplicationUser>(userStore);
+            var users = ctx.Users.ToList();
+        
+            return users;
+        }
         // GET api/values
         public IEnumerable<string> Get()
         {
