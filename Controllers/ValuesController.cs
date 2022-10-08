@@ -13,21 +13,31 @@ namespace B040.Authentication.Controllers
     [Authorize]
     public class ValuesController : ApiController
     {
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("Admin/GetAllUsers")]
+        public List<ApplicationUser> GetAllUsers()
+        {
+            // List<ApplicationUser> users = new List<ApplicationUser>();
+            var ctx = new ApplicationDbContext();
+                //var userStore = new UserStore<ApplicationUser>(ctx);
+                //var userManager = new UserManager<ApplicationUser>(userStore);
+                var users = ctx.Users.ToList();
+
+                return users;
+        }
+        // GET api/values
         //[AllowAnonymous]
         //[HttpGet]
-        //[Route("Admin/GetAllUsers")]
-        //public List<ApplicationUser> GetAllUsers()
+        //[Route("Admin/GetAllRoles")]
+        //public List<IdentityRole> GetAllRoles()
         //{
-        //    // List<ApplicationUser> users = new List<ApplicationUser>();
-        //    var ctx = new ApplicationDbContext();
- 
-        //        //var userStore = new UserStore<ApplicationUser>(ctx);
-        //        //var userManager = new UserManager<ApplicationUser>(userStore);
-        //    var users = ctx.Users.ToList();
-        
-        //    return users;
+        //    using (var ctx = new ApplicationDbContext())
+        //    {
+        //        var roles = ctx.Roles.ToList();
+        //        return roles;
+        //    }
         //}
-        // GET api/values
         public IEnumerable<string> Get()
         {
             string userId = RequestContext.Principal.Identity.GetUserId();

@@ -15,27 +15,27 @@ namespace B040.Authentication
 {
     public class APIHelper
     {
-        private HttpClient _APIClient;
+        private HttpClient _ApiClient;
         public APIHelper()
         {
             InitializeClient();
         }
         private void InitializeClient()
         {
-            _APIClient = new HttpClient();
+            _ApiClient = new HttpClient();
             string api = ConfigurationManager.AppSettings["api"];
             Console.WriteLine(api);
             try
             {
-                _APIClient.BaseAddress = new Uri(api);
+                _ApiClient.BaseAddress = new Uri(api);
             }
             catch (Exception)
             {
                 Console.Write("Setting BaseAddress threw an error.");
                 throw;
             }
-            _APIClient.DefaultRequestHeaders.Accept.Clear();
-            _APIClient
+            _ApiClient.DefaultRequestHeaders.Accept.Clear();
+            _ApiClient
                 .DefaultRequestHeaders
                 .Accept
                 .Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/Json"));
@@ -48,7 +48,7 @@ namespace B040.Authentication
                 new KeyValuePair<string,string>("username",username),
                 new KeyValuePair<string,string>("password",password),
             });
-            using (HttpResponseMessage response = await _APIClient.PostAsync("/Token", data))
+            using (HttpResponseMessage response = await _ApiClient.PostAsync("/Token", data))
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -63,7 +63,7 @@ namespace B040.Authentication
         }
         public async Task<List<ApplicationUser>> GetUsersAsync()
         {
-            using (HttpResponseMessage response = await _APIClient.GetAsync("/api/B040/Admin/GetAllUsers"))
+            using (HttpResponseMessage response = await _ApiClient.GetAsync("/api/B040/Admin/GetAllUsers"))
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -78,7 +78,7 @@ namespace B040.Authentication
         }
         public async Task<List<IdentityRole>> GetRolesAsync()
         {
-            using (HttpResponseMessage response = await _APIClient.GetAsync("/api/B040/Admin/GetAllRoles"))
+            using (HttpResponseMessage response = await _ApiClient.GetAsync("/api/B040/Admin/GetAllRoles"))
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -93,13 +93,31 @@ namespace B040.Authentication
         }
         public async Task CreateRolesAsync()
         {
-           
-            using (HttpResponseMessage response = await _APIClient.PostAsJsonAsync("/api/B040/Admin/CreateRoles","[{}]"))
+           string o = null;
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/B040/Admin/CreateRoles",o))
             {
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadAsAsync(null);
                     return ;
+                }
+                else
+                {
+                    throw new Exception(response.ReasonPhrase);
+                }
+            }
+        }
+        public async Task CreateAdminAsync(string userName,string password)
+        {
+            var o = new UserNamePasswordPairModel()
+            {
+                UserName = userName,
+                Password = password,
+            };
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/B040/Admin/CreateAdmin", o))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
                 }
                 else
                 {
@@ -114,16 +132,8 @@ public class AuthenticatedUserModel
     public string Access_Token { get; set; }
     public string UserName { get; set; }
 }
-public class AspNetUserModel
+public class UserNamePasswordPairModel
 {
-    public string Id { get; set; }
-    public string Email { get; set; }
-    public bool EmailConfirmed{ get; set; }
-    public string PaswordHash{ get; set; }
-    public string SecurityStamp{ get; set; }
-    public string PhoneNumber{ get; set; }
-    public bool PhoneNumberConfirmed{ get; set; }
-    public DateTime LockoutEndDateUtc { get; set; }
-    public int AccessFailedCount { get; set; }
     public string UserName { get; set; }
+    public string Password { get; set; }
 }
