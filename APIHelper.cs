@@ -165,6 +165,22 @@ namespace B040.Authentication
                 }
             }
         }
+        public async Task CreateClientsAsync()
+        {
+            string o = null;
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/Account/Admin/CreateClients", o))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+                else
+                {
+                    throw new Exception(response.ReasonPhrase);
+                }
+            }
+        }
+        
 
         public Task CreateAdminAsync(string userName)
         {

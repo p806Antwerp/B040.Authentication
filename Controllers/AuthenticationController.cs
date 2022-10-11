@@ -1,4 +1,6 @@
 ﻿using B040.Authentication.Models;
+using B040.Services;
+using B040.Services.Models;
 using Microsoft.Ajax.Utilities;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
@@ -10,6 +12,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.UI;
+using Mg.Services;
 
 namespace B040.Authentication.Controllers
 {
@@ -45,6 +48,54 @@ namespace B040.Authentication.Controllers
         }
         [AllowAnonymous]
         [HttpPost]
+        [Route("Admin/CreateClients")]
+        public async Task<bool> CreateClients()
+        {
+            var ctx = new ApplicationDbContext();
+            var b040 = DataAccessB040.GetInstance();
+            AccountController accountController = new AccountController();
+            List<ClientWithEmailModel> clientsWithEmail = b040.GetClientsWithEmail();
+            foreach (ClientWithEmailModel c in clientsWithEmail)
+            {
+                var au = new UserNamePasswordPairModel()
+                {
+                    UserName = c.Kl_Email
+                };
+                var exists = ExistsUser(au);
+                if (exists.Exists == false)
+                {
+                    string zerofilledAccount = ("00000" + c.Kl_Nummer.Trim()).Right(5);
+                    string pwd = $"Pwd{zerofilledAccount}.";
+                    RegisterBindingModel m = new RegisterBindingModel()
+                    {
+                        Email = c.Kl_Email,
+                        Password = pwd,
+                        ConfirmPassword = pwd
+                    };
+                   await accountController.Register(m);
+                }
+                var u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                addRole("Client");
+                void addRole(string roleName)
+                {
+                    var roleId = ctx.Roles.FirstOrDefault(x => x.Name == roleName).Id;
+                    var ur = new IdentityUserRole()
+                    {
+                        UserId = u.Id,
+                        RoleId = roleId
+                    };
+                    if (u.Roles.Any(x => x.RoleId == roleId) == false)
+                    {
+                        u.Roles.Add(ur);
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+            return true;
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
         [Route("Admin/CreateRoles")]
         public void CreateRoles()
         {
@@ -62,10 +113,10 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("Admin/ExistsUser")]
-        public ExistsModel ExistsUser(UserNamePasswordPairModel applicationUser)
+        public ExistsModel ExistsUser(UserNamePasswordPairModel model)
         {
             var ctx = new ApplicationDbContext();
-            ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == applicationUser.UserName);
+            ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == model.UserName);
             var result = new ExistsModel() { Exists = u != null };
             return result;
         }

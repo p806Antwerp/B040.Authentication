@@ -16,6 +16,10 @@ using Microsoft.Owin.Security.OAuth;
 using B040.Authentication.Models;
 using B040.Authentication.Providers;
 using B040.Authentication.Results;
+using B040.Services.Models;
+using B040.Services;
+using System.Linq;
+using Mg.Services;
 
 namespace B040.Authentication.Controllers
 {
@@ -333,6 +337,56 @@ namespace B040.Authentication.Controllers
                 return GetErrorResult(result);
             }
             return Ok();
+        }
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("Admin/CreateClients")]
+        public async Task<bool> CreateClients()
+        {
+            var ctx = new ApplicationDbContext();
+            var b040 = DataAccessB040.GetInstance();
+            List<ClientWithEmailModel> clientsWithEmail = b040.GetClientsWithEmail();
+            foreach (ClientWithEmailModel c in clientsWithEmail)
+            {
+                ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                var exists = u != null ;
+
+                if (exists == false)
+                {
+                    string zerofilledAccount = ("00000" + c.Kl_Nummer.Trim()).Right(5);
+                    string pwd = $"Pwd{zerofilledAccount}.";
+                    RegisterBindingModel m = new RegisterBindingModel()
+                    {
+                        Email = c.Kl_Email,
+                        Password = pwd,
+                        ConfirmPassword = pwd
+                    };
+                    var result = await Register (m);
+                    if (result != Ok())
+                    {
+                        Console.WriteLine($"{c.Kl_Email} is not valid.  Account ({c.Kl_Naam}");
+                        continue;
+                    }
+                }
+                u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                addRole("Client");
+                Console.WriteLine($"{c.Kl_Email} process");
+                void addRole(string roleName)
+                {
+                    var roleId = ctx.Roles.FirstOrDefault(x => x.Name == roleName).Id;
+                    var ur = new IdentityUserRole()
+                    {
+                        UserId = u.Id,
+                        RoleId = roleId
+                    };
+                    if (u.Roles.Any(x => x.RoleId == roleId) == false)
+                    {
+                        u.Roles.Add(ur);
+                        ctx.SaveChanges();
+                    }
+                }
+            }
+            return true;
         }
 
         // POST api/Account/RegisterExternal
