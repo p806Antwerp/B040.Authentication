@@ -1,4 +1,5 @@
-﻿using B040.Authentication.Models;
+﻿using B040.Authentication.Controllers;
+using B040.Authentication.Models;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.VisualBasic.ApplicationServices;
 using System;
@@ -13,10 +14,10 @@ using System.Web.Mvc;
 
 namespace B040.Authentication
 {
-    public class APIHelper
+    public class ApiHelper
     {
         private HttpClient _ApiClient;
-        public APIHelper()
+        public ApiHelper()
         {
             InitializeClient();
         }
@@ -61,13 +62,13 @@ namespace B040.Authentication
                 }
             }
         }
-        public async Task<List<ApplicationUser>> GetUsersAsync()
+        public async Task<List<UserWithRolesModel>> GetAllUsersAsync()
         {
-            using (HttpResponseMessage response = await _ApiClient.GetAsync("/api/B040/Admin/GetAllUsers"))
+            using (HttpResponseMessage response = await _ApiClient.GetAsync("/api/Authentication/Admin/GetAllUsers"))
             {
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadAsAsync<List<ApplicationUser>>();
+                    var result = await response.Content.ReadAsAsync<List<UserWithRolesModel>>();
                     return result;
                 }
                 else
@@ -78,7 +79,7 @@ namespace B040.Authentication
         }
         public async Task<List<IdentityRole>> GetRolesAsync()
         {
-            using (HttpResponseMessage response = await _ApiClient.GetAsync("/api/B040/Admin/GetAllRoles"))
+            using (HttpResponseMessage response = await _ApiClient.GetAsync("/api/Authentication/Admin/GetAllRoles"))
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -94,7 +95,7 @@ namespace B040.Authentication
         public async Task CreateRolesAsync()
         {
            string o = null;
-            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/B040/Admin/CreateRoles",o))
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/Authentication/Admin/CreateRoles",o))
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -113,7 +114,7 @@ namespace B040.Authentication
                 UserName = userName,
                 Password = password,
             };
-            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/B040/Admin/CreateAdmin", o))
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/Authentication/Admin/CreateAdmin", o))
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -125,15 +126,49 @@ namespace B040.Authentication
                 }
             }
         }
+        public async Task<bool> ExistsUserAsync(string userName)
+        {
+            var data = new UserNamePasswordPairModel()
+            {
+                UserName = userName
+            };
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("/api/Authentication/Admin/ExistsUser", data))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadAsAsync<ExistsModel>();
+                    return result.Exists;
+                }
+                else
+                {
+                    throw new Exception(response.ReasonPhrase);
+                }
+            }
+        }
+        public async Task CreateUserAsync(string userName,string password)
+        {
+            var data = new RegisterBindingModel()
+            {
+                Email = userName,
+                Password = password,
+                ConfirmPassword = password
+            };
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("api/Account/Register", data))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+                else
+                {
+                    throw new Exception(response.ReasonPhrase);
+                }
+            }
+        }
+
+        public Task CreateAdminAsync(string userName)
+        {
+            throw new NotImplementedException();
+        }
     }
-}
-public class AuthenticatedUserModel
-{
-    public string Access_Token { get; set; }
-    public string UserName { get; set; }
-}
-public class UserNamePasswordPairModel
-{
-    public string UserName { get; set; }
-    public string Password { get; set; }
 }

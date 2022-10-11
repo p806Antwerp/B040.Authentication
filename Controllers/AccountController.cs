@@ -314,7 +314,6 @@ namespace B040.Authentication.Controllers
                 };
                 logins.Add(login);
             }
-
             return logins;
         }
 
@@ -327,16 +326,12 @@ namespace B040.Authentication.Controllers
             {
                 return BadRequest(ModelState);
             }
-
             var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
-
             IdentityResult result = await UserManager.CreateAsync(user, model.Password);
-
             if (!result.Succeeded)
             {
                 return GetErrorResult(result);
             }
-
             return Ok();
         }
 
