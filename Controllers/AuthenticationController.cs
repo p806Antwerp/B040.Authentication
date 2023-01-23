@@ -1,6 +1,4 @@
 ﻿using B040.Authentication.Models;
-using B040.Services;
-using B040.Services.Models;
 using Microsoft.Ajax.Utilities;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
@@ -13,7 +11,8 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using System.Web.UI;
 using Mg.Services;
-
+using B040.Services;
+using B040.Services.Models;
 namespace B040.Authentication.Controllers
 {
 

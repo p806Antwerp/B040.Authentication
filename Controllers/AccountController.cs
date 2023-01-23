@@ -16,10 +16,10 @@ using Microsoft.Owin.Security.OAuth;
 using B040.Authentication.Models;
 using B040.Authentication.Providers;
 using B040.Authentication.Results;
-using B040.Services.Models;
-using B040.Services;
 using System.Linq;
 using Mg.Services;
+using B040.Services;
+using B040.Services.Models;
 
 namespace B040.Authentication.Controllers
 {
@@ -350,7 +350,6 @@ namespace B040.Authentication.Controllers
             {
                 ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
                 var exists = u != null ;
-
                 if (exists == false)
                 {
                     string zerofilledAccount = ("00000" + c.Kl_Nummer.Trim()).Right(5);
@@ -362,9 +361,12 @@ namespace B040.Authentication.Controllers
                         ConfirmPassword = pwd
                     };
                     var result = await Register (m);
-                    if (result != Ok())
+                    u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                    exists = u != null;
+                    if (exists == false)
                     {
                         Console.WriteLine($"{c.Kl_Email} is not valid.  Account ({c.Kl_Naam}");
+                        ModelState.Clear();
                         continue;
                     }
                 }
