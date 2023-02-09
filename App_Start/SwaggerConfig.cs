@@ -17,6 +17,7 @@ namespace B040.Authentication
             GlobalConfiguration.Configuration
                 .EnableSwagger(c =>
                     {
+                        // Tim Corey Stuff
                         c.DocumentFilter<AuthTokenOperation>();
                         c.OperationFilter<AuthorizationOperation>();
                         // By default, the service root url is inferred from the request used to access the docs.

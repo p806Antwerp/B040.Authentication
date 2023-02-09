@@ -18,7 +18,7 @@ namespace B040.Authentication.App_Start
                     tags = new List<string> { "Auth" },
                     consumes = new List<string>
                     {
-                        "applicatin/x-www-form-urlencoded"
+                        "application/x-www-form-urlencoded"
                     },
                     parameters = new List<Parameter>
                     {

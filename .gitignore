@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /dbo.AspNetUsers.data.sql
 /Create dbo.AspNetUsers_1.sql
+/Web.Release.config
+/Web.Debug.config
+/Web.config
