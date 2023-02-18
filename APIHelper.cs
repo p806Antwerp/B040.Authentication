@@ -180,9 +180,24 @@ namespace B040.Authentication
                 }
             }
         }
-        
+        public async Task GetRolesAsync(string loginEmail, string loginPassword)
+        {
+            UserNamePasswordPairModel up = new UserNamePasswordPairModel() { UserName = loginEmail, Password = loginPassword };
+            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync<UserNamePasswordPairModel>("/api/Account/Admin/GetRoles", up))
+            {
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+                else
+                {
+                    throw new Exception(response.ReasonPhrase);
+                }
+            }
+        }
 
-        public Task CreateAdminAsync(string userName)
+
+            public Task CreateAdminAsync(string userName)
         {
             throw new NotImplementedException();
         }

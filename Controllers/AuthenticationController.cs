@@ -13,6 +13,10 @@ using System.Web.UI;
 using Mg.Services;
 using B040.Services;
 using B040.Services.Models;
+using System.Web.Security;
+using System.Security.Policy;
+using System.Runtime.InteropServices.ComTypes;
+
 namespace B040.Authentication.Controllers
 {
 
@@ -71,7 +75,7 @@ namespace B040.Authentication.Controllers
                         Password = pwd,
                         ConfirmPassword = pwd
                     };
-                   await accountController.Register(m);
+                    await accountController.Register(m);
                 }
                 var u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
                 addRole("Client");
@@ -109,6 +113,7 @@ namespace B040.Authentication.Controllers
                 ctx.SaveChanges();
             }
         }
+
         [AllowAnonymous]
         [HttpPost]
         [Route("Admin/ExistsUser")]
@@ -129,6 +134,28 @@ namespace B040.Authentication.Controllers
             return roles;
         }
         [AllowAnonymous]
+        [HttpPost]
+        [Route("Admin/GetRoles")]
+        public List<String> GetRoles(UserNamePasswordPairModel model)
+        {
+            var rv = new List<String>();
+            // Get the DBContext from the OWin Context
+            var ctx = new ApplicationDbContext();
+            // Retrieve the user
+            ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            if (u == null) { return rv; }
+            // Verify the passowrd
+            var hasher = new PasswordHasher();
+            var result = hasher.VerifyHashedPassword(u.PasswordHash, model.Password );
+            if (result != PasswordVerificationResult.Success) { return rv; }
+            // return the role name(s)
+            foreach(var r in u.Roles)
+            {
+                rv.Add(ctx.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
+            }
+            return rv;
+        }
+        [AllowAnonymous]
         [HttpGet]
         [Route("Admin/GetAllUsers")]
         public List<UserWithRolesModel> GetAllUsers()
@@ -141,8 +168,8 @@ namespace B040.Authentication.Controllers
                 {
                     Id = x.Id,
                     UserName = x.UserName,
-                    Roles = x.Roles.Join(roles,u => u.RoleId,r => r.Id,(u,r)=> r)
-                        .Select(y => new RoleModel(){ Id =y.Id,Name = y.Name })
+                    Roles = x.Roles.Join(roles, u => u.RoleId, r => r.Id, (u, r) => r)
+                        .Select(y => new RoleModel() { Id = y.Id, Name = y.Name })
                         .ToList()
                 })
                 .ToList();
