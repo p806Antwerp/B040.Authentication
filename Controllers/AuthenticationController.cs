@@ -139,6 +139,8 @@ namespace B040.Authentication.Controllers
         public List<String> GetRoles(UserNamePasswordPairModel model)
         {
             var rv = new List<String>();
+            if (model.UserName == null) { return rv; }
+            if (model.Password == null) { return rv; }
             // Get the DBContext from the OWin Context
             var ctx = new ApplicationDbContext();
             // Retrieve the user
