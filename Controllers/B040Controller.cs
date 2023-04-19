@@ -40,21 +40,28 @@ namespace B040.Authentication.Controllers
 			dto.CustomerName = customer.KL_Naam;
 			dto.DayOfWeekInDutch = modDutch.cDagInDeWeek(date);
 			var orderId = await _b040.GetOrderIdByCustomerAndDate(customer.KL_ID, date);
-			if (orderId == 0)
+			if (customer == null)
 			{
-				orderId = await GenerateOrder();
-				if (dto.Success == false)
-				{
-					dtoTask.SetResult(dto);
-					return await dtoTask.Task;
-				}
+				dto.Success = false;
+				dto.Message = $"Uw bestelling voor {date.ToString("dd/MMM/yyyy")} ({dto.DayOfWeekInDutch}) kan nog niet worden aangepast.";
+				dtoTask.SetResult(dto);
+				return await dtoTask.Task;
 			}
+			//if (orderId == 0)
+			//{
+			//	orderId = await GenerateOrder();
+			//	if (dto.Success == false)
+			//	{
+			//		dtoTask.SetResult(dto);
+			//		return await dtoTask.Task;
+			//	}
+			//}
 			var q = await _b040.GetOrderById(orderId);
 			int count = q.Count();
 			if (count < 2)
 			{
 				dto.Success = false;
-				dto.Message = "Deze bestelling kan niet via Web wordern aangepast (minder dan 2 lijnen).";
+				dto.Message = "Deze bestelling kan niet via Web worden aangepast (minder dan 2 lijnen).";
 				dtoTask.SetResult(dto);
 				return await dtoTask.Task;
 			}
@@ -62,22 +69,22 @@ namespace B040.Authentication.Controllers
 			dto.BestH_Id = orderId;
 			dtoTask.SetResult(dto);
 			return await dtoTask.Task;
-			async Task<int> GenerateOrder()
-			{
-				var t = new TaskCompletionSource<int>();
-				var sthId = await _b040.GetStandardHIdByCustomerDayOfWeekCode(customer.KL_ID, dto.DayOfWeekInDutch, standardCode);
-				if (sthId == 0)
-				{
-					dto.Success = false;
-					dto.Message = $"Geen standaard beschikbaar voor {dto.CustomerName} op {dto.DayOfWeekInDutch}.  Standaard: {standardCode}";
-					return 0;
-				}
-				var o = new bzBestel();
-				string document = "";
-				bool isParticulier = false;
-				await Task.Run(() => o.createBestelFromStandaard(sthId, date, ref document, ref isParticulier));
-				return await _b040.GetOrderIdByDocument(document);
-			}
+			//async Task<int> GenerateOrder()
+			//{
+			//	var t = new TaskCompletionSource<int>();
+			//	var sthId = await _b040.GetStandardHIdByCustomerDayOfWeekCode(customer.KL_ID, dto.DayOfWeekInDutch, standardCode);
+			//	if (sthId == 0)
+			//	{
+			//		dto.Success = false;
+			//		dto.Message = $"Geen standaard beschikbaar voor {dto.CustomerName} op {dto.DayOfWeekInDutch}.  Standaard: {standardCode}";
+			//		return 0;
+			//	}
+			//	var o = new bzBestel();
+			//	string document = "";
+			//	bool isParticulier = false;
+			//	await Task.Run(() => o.createBestelFromStandaard(sthId, date, ref document, ref isParticulier));
+			//	return await _b040.GetOrderIdByDocument(document);
+			//}
 		}
 		// GET api/<controller>
 		public IEnumerable<string> Get()
