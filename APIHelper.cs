@@ -1,5 +1,6 @@
 ﻿using B040.Authentication.Controllers;
 using B040.Authentication.Models;
+using B040.Services.Models;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.VisualBasic.ApplicationServices;
 using System;
@@ -182,8 +183,14 @@ namespace B040.Authentication
         }
         public async Task GetRolesAsync(string loginEmail, string loginPassword)
         {
-            UserNamePasswordPairModel up = new UserNamePasswordPairModel() { UserName = loginEmail, Password = loginPassword };
-            using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync<UserNamePasswordPairModel>("/api/Account/Admin/GetRoles", up))
+            UserNamePasswordPairModel up = 
+                new UserNamePasswordPairModel() { 
+                    UserName = loginEmail, 
+                    Password = loginPassword };
+            using (HttpResponseMessage response = 
+                await _ApiClient.PostAsJsonAsync<UserNamePasswordPairModel>(
+                    "/api/Account/Admin/GetRoles",
+                    up))
             {
                 if (response.IsSuccessStatusCode)
                 {
@@ -196,10 +203,27 @@ namespace B040.Authentication
             }
         }
 
-
-            public Task CreateAdminAsync(string userName)
+        public Task CreateAdminAsync(string userName)
         {
             throw new NotImplementedException();
         }
-    }
+		public async Task GetWebOrder(WebOrderParametersModel wp)
+		{
+			using (HttpResponseMessage response = 
+                await _ApiClient.PostAsJsonAsync<WebOrderParametersModel>(
+                    "/api/B040/GetWebOrder", wp))
+			{
+				if (response.IsSuccessStatusCode)
+				{
+					return;
+				}
+				else
+				{
+					throw new Exception(response.ReasonPhrase);
+				}
+			}
+		}
+
+
+	}
 }

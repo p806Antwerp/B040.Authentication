@@ -13,9 +13,11 @@ using System.Web.UI;
 using Mg.Services;
 using B040.Services;
 using B040.Services.Models;
+using b040;
 using System.Web.Security;
 using System.Security.Policy;
 using System.Runtime.InteropServices.ComTypes;
+using System.Web.Helpers;
 
 namespace B040.Authentication.Controllers
 {
@@ -148,10 +150,10 @@ namespace B040.Authentication.Controllers
             if (u == null) { return rv; }
             // Verify the passowrd
             var hasher = new PasswordHasher();
-            var result = hasher.VerifyHashedPassword(u.PasswordHash, model.Password );
+            var result = hasher.VerifyHashedPassword(u.PasswordHash, model.Password);
             if (result != PasswordVerificationResult.Success) { return rv; }
             // return the role name(s)
-            foreach(var r in u.Roles)
+            foreach (var r in u.Roles)
             {
                 rv.Add(ctx.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
             }
@@ -178,5 +180,4 @@ namespace B040.Authentication.Controllers
             return results;
         }
     }
-
 }
