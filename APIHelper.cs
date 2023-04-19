@@ -223,7 +223,22 @@ namespace B040.Authentication
 				}
 			}
 		}
-
+		public async Task GetNextDeliveryDate()
+		{
+			using (HttpResponseMessage response =
+				await _ApiClient.PostAsJsonAsync<DateTime>(
+					"/api/B040/GetNextDeliveryDate",DateTime.Today.AddDays(1)))
+			{
+				if (response.IsSuccessStatusCode)
+				{
+					return;
+				}
+				else
+				{
+					throw new Exception(response.ReasonPhrase);
+				}
+			}
+		}
 
 	}
 }

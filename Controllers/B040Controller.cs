@@ -10,8 +10,6 @@ using System.Threading.Tasks;
 using System.Web.Http;
 using B040.Authentication.Models;
 using Mg.Services;
-
-
 namespace B040.Authentication.Controllers
 {
 	[Authorize]
@@ -85,6 +83,14 @@ namespace B040.Authentication.Controllers
 			//	await Task.Run(() => o.createBestelFromStandaard(sthId, date, ref document, ref isParticulier));
 			//	return await _b040.GetOrderIdByDocument(document);
 			//}
+		}
+		[AllowAnonymous]
+		[HttpPost]
+		[Route("GetNextDeliveryDate")]
+		public async Task<DateTime> GetNextDeliveryDate()
+		{
+			var result = Task.Run(() => bzBestel.dGetLeveringForBestellingDatum()).Result;
+			return result;
 		}
 		// GET api/<controller>
 		public IEnumerable<string> Get()
