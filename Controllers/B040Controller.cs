@@ -38,7 +38,7 @@ namespace B040.Authentication.Controllers
 			dto.CustomerName = customer.KL_Naam;
 			dto.DayOfWeekInDutch = modDutch.cDagInDeWeek(date);
 			var orderId = await _b040.GetOrderIdByCustomerAndDate(customer.KL_ID, date);
-			if (customer == null)
+			if (orderId == 0)
 			{
 				dto.Success = false;
 				dto.Message = $"Uw bestelling voor {date.ToString("dd/MMM/yyyy")} ({dto.DayOfWeekInDutch}) kan nog niet worden aangepast.";
