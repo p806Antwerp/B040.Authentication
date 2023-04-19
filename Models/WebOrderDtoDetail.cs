@@ -21,5 +21,6 @@ namespace B040.Authentication.Models
 		public double? BestD_Waarde { get; set; }
 		public string Art_Nr { get; set; }
 		public bool Art_Snijden { get; set; }
+		public int Eenh_Exponent { get; set; }
 	}
 }
