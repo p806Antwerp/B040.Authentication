@@ -363,3 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /dbo.AspNetUsers.data.sql
 /Create dbo.AspNetUsers_1.sql
+*.dacpac
+/.gitignore
+/B040.Authentication.csproj
