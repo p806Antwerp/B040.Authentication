@@ -10,11 +10,13 @@ using Microsoft.Owin.Security.OAuth;
 using Owin;
 using B040.Authentication.Providers;
 using B040.Authentication.Models;
-
+using System.IO;
+using System.Configuration;
 namespace B040.Authentication
 {
     public partial class Startup
     {
+
         public static OAuthAuthorizationServerOptions OAuthOptions { get; private set; }
 
         public static string PublicClientId { get; private set; }
@@ -22,7 +24,7 @@ namespace B040.Authentication
         // For more information on configuring authentication, please visit https://go.microsoft.com/fwlink/?LinkId=301864
         public void ConfigureAuth(IAppBuilder app)
         {
-            // Configure the db context and user manager to use a single instance per request
+
             app.CreatePerOwinContext(ApplicationDbContext.Create);
             app.CreatePerOwinContext<ApplicationUserManager>(ApplicationUserManager.Create);
 
@@ -40,7 +42,8 @@ namespace B040.Authentication
                 AuthorizeEndpointPath = new PathString("/api/Account/ExternalLogin"),
                 AccessTokenExpireTimeSpan = TimeSpan.FromDays(300),
                 // In production mode set AllowInsecureHttp = false
-                AllowInsecureHttp = true
+                AllowInsecureHttp = true,
+
             };
 
             // Enable the application to use bearer tokens to authenticate users

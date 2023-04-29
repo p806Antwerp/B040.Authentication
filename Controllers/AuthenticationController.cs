@@ -26,19 +26,23 @@ namespace B040.Authentication.Controllers
     [RoutePrefix("api/Authentication")]
     public class AuthenticationController : ApiController
     {
+        private ApplicationDbContext _context;
+        public AuthenticationController()
+        {
+            _context = new ApplicationDbContext();
+        }
         [AllowAnonymous]
         [HttpPost]
         [Route("Admin/CreateAdmin")]
         public bool CreateAdmin(ApplicationUser applicationUser)
         {
-            var ctx = new ApplicationDbContext();
-            var u = ctx.Users.FirstOrDefault(x => x.UserName == applicationUser.UserName);
+            var u = _context.Users.FirstOrDefault(x => x.UserName == applicationUser.UserName);
             addRole("Admin");
             addRole("Client");
             return true;
             void addRole(string roleName)
             {
-                var roleId = ctx.Roles.FirstOrDefault(x => x.Name == roleName).Id;
+                var roleId = _context.Roles.FirstOrDefault(x => x.Name == roleName).Id;
                 var ur = new IdentityUserRole()
                 {
                     UserId = u.Id,
@@ -47,7 +51,7 @@ namespace B040.Authentication.Controllers
                 if (u.Roles.Any(x => x.RoleId == roleId) == false)
                 {
                     u.Roles.Add(ur);
-                    ctx.SaveChanges();
+                    _context.SaveChanges();
                 }
             }
         }
@@ -56,7 +60,6 @@ namespace B040.Authentication.Controllers
         [Route("Admin/CreateClients")]
         public async Task<bool> CreateClients()
         {
-            var ctx = new ApplicationDbContext();
             var b040 = DataAccessB040.GetInstance();
             AccountController accountController = new AccountController();
             List<ClientWithEmailModel> clientsWithEmail = b040.GetClientsWithEmail();
@@ -79,11 +82,11 @@ namespace B040.Authentication.Controllers
                     };
                     await accountController.Register(m);
                 }
-                var u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                var u = _context.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
                 addRole("Client");
                 void addRole(string roleName)
                 {
-                    var roleId = ctx.Roles.FirstOrDefault(x => x.Name == roleName).Id;
+                    var roleId = _context.Roles.FirstOrDefault(x => x.Name == roleName).Id;
                     var ur = new IdentityUserRole()
                     {
                         UserId = u.Id,
@@ -92,7 +95,7 @@ namespace B040.Authentication.Controllers
                     if (u.Roles.Any(x => x.RoleId == roleId) == false)
                     {
                         u.Roles.Add(ur);
-                        ctx.SaveChanges();
+                        _context.SaveChanges();
                     }
                 }
             }
@@ -104,15 +107,14 @@ namespace B040.Authentication.Controllers
         [Route("Admin/CreateRoles")]
         public void CreateRoles()
         {
-            var ctx = new ApplicationDbContext();
             process("Admin");
             process("Client");
             void process(string roleName)
             {
-                if (ctx.Roles.Any(x => x.Name == roleName)) { return; }
+                if (_context.Roles.Any(x => x.Name == roleName)) { return; }
                 var r = new IdentityRole() { Name = roleName };
-                ctx.Roles.Add(r);
-                ctx.SaveChanges();
+                _context.Roles.Add(r);
+                _context.SaveChanges();
             }
         }
 
@@ -121,8 +123,7 @@ namespace B040.Authentication.Controllers
         [Route("Admin/ExistsUser")]
         public ExistsModel ExistsUser(UserNamePasswordPairModel model)
         {
-            var ctx = new ApplicationDbContext();
-            ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            ApplicationUser u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
             var result = new ExistsModel() { Exists = u != null };
             return result;
         }
@@ -131,8 +132,7 @@ namespace B040.Authentication.Controllers
         [Route("Admin/GetAllRoles")]
         public List<IdentityRole> GetAllRoles()
         {
-            var ctx = new ApplicationDbContext();
-            var roles = ctx.Roles.ToList();
+            var roles = _context.Roles.ToList();
             return roles;
         }
         [AllowAnonymous]
@@ -144,9 +144,8 @@ namespace B040.Authentication.Controllers
             if (model.UserName == null) { return rv; }
             if (model.Password == null) { return rv; }
             // Get the DBContext from the OWin Context
-            var ctx = new ApplicationDbContext();
             // Retrieve the user
-            ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            ApplicationUser u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
             if (u == null) { return rv; }
             // Verify the passowrd
             var hasher = new PasswordHasher();
@@ -155,7 +154,7 @@ namespace B040.Authentication.Controllers
             // return the role name(s)
             foreach (var r in u.Roles)
             {
-                rv.Add(ctx.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
+                rv.Add(_context.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
             }
             return rv;
         }
@@ -164,9 +163,8 @@ namespace B040.Authentication.Controllers
         [Route("Admin/GetAllUsers")]
         public List<UserWithRolesModel> GetAllUsers()
         {
-            var ctx = new ApplicationDbContext();
-            var roles = ctx.Roles.ToList();
-            List<UserWithRolesModel> results = ctx
+            var roles = _context.Roles.ToList();
+            List<UserWithRolesModel> results = _context
                 .Users.ToList()
                 .Select(x => new UserWithRolesModel
                 {
