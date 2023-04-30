@@ -1,8 +1,10 @@
-﻿using System.Security.Claims;
+﻿using System.IO;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
+using System.Configuration;
 
 namespace B040.Authentication.Models
 {
@@ -20,7 +22,31 @@ namespace B040.Authentication.Models
 
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
-        public ApplicationDbContext()
+		static string _connectionString = "*";
+		static string GetConnectionString()
+		{
+			if (_connectionString != "*") { return _connectionString; }
+			string connectionStringKey = "";
+			string filePath = @"c:\_Config\B040.Ini";
+			StreamReader reader = new StreamReader(filePath);
+			string line;
+			string authToken = "AUTH";
+			while ((line = reader.ReadLine()) != null)
+			{
+				string[] parts = line.Split('=');
+				if (parts.Length == 2)
+				{
+					string key = parts[0].Trim();
+					string value = parts[1].Trim();
+					if (key == authToken) { connectionStringKey = value; }
+				}
+			}
+			_connectionString = ConfigurationManager
+				  .ConnectionStrings[connectionStringKey]
+				   .ConnectionString;
+			return _connectionString;
+		}
+		public ApplicationDbContext()
             : base("DefaultConnection", throwIfV1Schema: false)
         {
         }

@@ -239,6 +239,5 @@ namespace B040.Authentication
 				}
 			}
 		}
-
 	}
 }
