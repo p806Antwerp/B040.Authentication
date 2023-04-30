@@ -29,9 +29,10 @@ namespace B040.Authentication.Controllers
     {
         private const string LocalLoginProvider = "Local";
         private ApplicationUserManager _userManager;
-
+        private ApplicationDbContext _context;
         public AccountController()
         {
+            _context = new ApplicationDbContext();
         }
 
         public AccountController(ApplicationUserManager userManager,
@@ -343,12 +344,11 @@ namespace B040.Authentication.Controllers
         [Route("Admin/CreateClients")]
         public async Task<bool> CreateClients()
         {
-            var ctx = new ApplicationDbContext();
             var b040 = DataAccessB040.GetInstance();
             List<ClientWithEmailModel> clientsWithEmail = b040.GetClientsWithEmail();
             foreach (ClientWithEmailModel c in clientsWithEmail)
             {
-                ApplicationUser u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                ApplicationUser u = _context.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
                 var exists = u != null ;
                 if (exists == false)
                 {
@@ -361,7 +361,7 @@ namespace B040.Authentication.Controllers
                         ConfirmPassword = pwd
                     };
                     var result = await Register (m);
-                    u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                    u = _context.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
                     exists = u != null;
                     if (exists == false)
                     {
@@ -370,12 +370,12 @@ namespace B040.Authentication.Controllers
                         continue;
                     }
                 }
-                u = ctx.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
+                u = _context.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
                 addRole("Client");
                 Console.WriteLine($"{c.Kl_Email} process");
                 void addRole(string roleName)
                 {
-                    var roleId = ctx.Roles.FirstOrDefault(x => x.Name == roleName).Id;
+                    var roleId = _context.Roles.FirstOrDefault(x => x.Name == roleName).Id;
                     var ur = new IdentityUserRole()
                     {
                         UserId = u.Id,
@@ -384,7 +384,7 @@ namespace B040.Authentication.Controllers
                     if (u.Roles.Any(x => x.RoleId == roleId) == false)
                     {
                         u.Roles.Add(ur);
-                        ctx.SaveChanges();
+                        _context.SaveChanges();
                     }
                 }
             }
