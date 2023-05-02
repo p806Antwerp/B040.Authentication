@@ -18,6 +18,7 @@ using System.Web.Security;
 using System.Security.Policy;
 using System.Runtime.InteropServices.ComTypes;
 using System.Web.Helpers;
+using System.Security.Principal;
 
 namespace B040.Authentication.Controllers
 {
@@ -30,6 +31,7 @@ namespace B040.Authentication.Controllers
         public AuthenticationController()
         {
             _context = new ApplicationDbContext();
+            Monitor.Console("Authentication Controller Connected.");
         }
         [AllowAnonymous]
         [HttpPost]
@@ -143,9 +145,19 @@ namespace B040.Authentication.Controllers
             var rv = new List<String>();
             if (model.UserName == null) { return rv; }
             if (model.Password == null) { return rv; }
-            // Get the DBContext from the OWin Context
-            // Retrieve the user
-            ApplicationUser u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            ApplicationUser u;
+            Monitor.Console($"Conn. string: {_context.Database.Connection.ConnectionString}");
+            Monitor.Console($"Current User: {WindowsIdentity.GetCurrent().Name}");
+            try
+            {
+                u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            }
+            catch (Exception ex)
+            {
+                Monitor.Console($"GetRoles exception: {ex.Message}");
+ 
+                throw ex;
+            }
             if (u == null) { return rv; }
             // Verify the passowrd
             var hasher = new PasswordHasher();
