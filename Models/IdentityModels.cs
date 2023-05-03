@@ -29,22 +29,24 @@ namespace B040.Authentication.Models
             if (_connectionString != "*") { return _connectionString; }
             string connectionStringKey = "";
             string filePath = @"c:\_Config\B040.Ini";
-            StreamReader reader = new StreamReader(filePath);
-            string line;
-            string authToken = "AUTH";
-            while ((line = reader.ReadLine()) != null)
+            using (StreamReader reader = new StreamReader(filePath))
             {
-                // Split the line into a key and a value
-                string[] parts = line.Split('=');
-                if (parts.Length == 2)
+                string line;
+                string authToken = "AUTH";
+                while ((line = reader.ReadLine()) != null)
                 {
-                    string key = parts[0].Trim();
-                    string value = parts[1].Trim();
-
-                    // Check if the key is "AUTH"
-                    if (key == authToken)
+                    // Split the line into a key and a value
+                    string[] parts = line.Split('=');
+                    if (parts.Length == 2)
                     {
-                        connectionStringKey = value;
+                        string key = parts[0].Trim();
+                        string value = parts[1].Trim();
+
+                        // Check if the key is "AUTH"
+                        if (key == authToken)
+                        {
+                            connectionStringKey = value;
+                        }
                     }
                 }
             }
