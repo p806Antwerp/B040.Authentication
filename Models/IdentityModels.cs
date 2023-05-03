@@ -26,21 +26,25 @@ namespace B040.Authentication.Models
         static string _connectionString = "*";
         static string GetConnectionString()
         {
-            if (_connectionString != "*") { return  _connectionString; }
+            if (_connectionString != "*") { return _connectionString; }
             string connectionStringKey = "";
             string filePath = @"c:\_Config\B040.Ini";
-            using (StreamReader reader = new StreamReader(filePath))
-            { 
-                string line;
-                string authToken = "AUTH";
-                while ((line = reader.ReadLine()) != null)
+            StreamReader reader = new StreamReader(filePath);
+            string line;
+            string authToken = "AUTH";
+            while ((line = reader.ReadLine()) != null)
+            {
+                // Split the line into a key and a value
+                string[] parts = line.Split('=');
+                if (parts.Length == 2)
                 {
-                    string[] parts = line.Split('=');
-                    if (parts.Length == 2)
+                    string key = parts[0].Trim();
+                    string value = parts[1].Trim();
+
+                    // Check if the key is "AUTH"
+                    if (key == authToken)
                     {
-                        string key = parts[0].Trim();
-                        string value = parts[1].Trim();
-                        if (key == authToken) { connectionStringKey = value; }
+                        connectionStringKey = value;
                     }
                 }
             }
