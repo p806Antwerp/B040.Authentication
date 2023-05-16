@@ -58,6 +58,14 @@ namespace B040.Authentication.Controllers
 				dtoTask.SetResult(dto);
 				return await dtoTask.Task;
 			}
+			bool locked = await Task<bool>.Run(() => b040.ModLock.lLock(0, "BestH", orderId));
+			if (locked==false)
+			{
+				dto.Success = false;
+				dto.Message = "Deze bestelling is vergrendeld.";
+				dtoTask.SetResult(dto);
+				return await dtoTask.Task;
+			}
 			dto.Repository = q.CastingList<WebOrderDtoDetail, BestDModelX>();
 			dto.BestH_Id = orderId;
 			dtoTask.SetResult(dto);
