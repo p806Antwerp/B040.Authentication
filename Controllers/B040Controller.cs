@@ -116,6 +116,7 @@ namespace B040.Authentication.Controllers
 				{
 					try
 					{
+						Monitor.Console(bH.ToString());
 						cruds.UpdateBestH(bH, t);
 						foreach (var l in dto.Repository)
 						{
