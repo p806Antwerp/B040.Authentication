@@ -20,6 +20,23 @@ namespace B040.Authentication.Controllers
 	[RoutePrefix("api/B040")]
 	public class B040Controller : ApiController
 	{
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("GetAllArtikelsFromEmail")]
+        public async Task<List<ArtikelModel>> GetAllArtikelsFromEmail(string email)
+        {
+            var _b040 = DataAccessB040.GetInstance();
+            return Task.Run(() =>  _b040.GetArtikelsFromEmail(email)).Result;
+        }
+		[AllowAnonymous]
+		[HttpGet]
+		[Route("GetArtikelFromId")]
+		public async Task<ArtikelModel> GetArtikelsFromId(string idString)
+		{
+			int id = int.Parse(idString);
+			var _b040 = DataAccessB040.GetInstance();
+			return Task.Run(() => _b040.GetArtikelFromId(id)).Result;
+		}
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("GetWebOrder")]
@@ -187,33 +204,7 @@ namespace B040.Authentication.Controllers
 			}
 			return or;
 		}
+ 
 
-
-		// GET api/<controller>
-		public IEnumerable<string> Get()
-		{
-			return new string[] { "value1", "value2" };
-		}
-
-		// GET api/<controller>/5
-		public string Get(int id)
-		{
-			return "value";
-		}
-
-		// POST api/<controller>
-		public void Post([FromBody] string value)
-		{
-		}
-
-		// PUT api/<controller>/5
-		public void Put(int id, [FromBody] string value)
-		{
-		}
-
-		// DELETE api/<controller>/5
-		public void Delete(int id)
-		{
-		}
-	}
+    }
 }
