@@ -138,7 +138,11 @@ namespace B040.Authentication.Controllers
 						foreach (var l in dto.Repository)
 						{
 							BestDModel bD = l.Casting<BestDModel>();
-							if (bD.BestD_ID == 0) { cruds.InsertBestD(bD, t); }
+							if (bD.BestD_ID == 0) 
+							{ // B040 6296.3 add header id to added orderline
+								bD.BestD_BestH = dto.BestH_Id;
+								cruds.InsertBestD(bD, t);
+							}
 							else { cruds.UpdateBestD(bD, t); }
 						}
 						t.Commit();
