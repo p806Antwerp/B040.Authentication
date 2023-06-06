@@ -188,7 +188,7 @@ namespace B040.Authentication.Controllers
 			or.Success = ModLock.lLock(0, m.Table, m.Id,"Web");
 			if (or.Success == false)
 			{
-				or.Fail("Vergrendeling is mislukt.");
+				or.Fail("De vergrendeling is mislukt.");
 				or.Monitor();
 			}
 			return or;
@@ -196,7 +196,7 @@ namespace B040.Authentication.Controllers
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("UnlockWebOrder")]
-		public async Task<OpResult> UnockWebOrder(LockModel m)
+		public async Task<OpResult> UnlockWebOrder(LockModel m)
 		{
 			modB040Config.lb040Config();
 			var or = new OpResult();
