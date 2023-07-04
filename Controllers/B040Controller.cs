@@ -208,7 +208,52 @@ namespace B040.Authentication.Controllers
 			}
 			return or;
 		}
- 
 
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("UnlockWebOrdersFromEmail")]
+        public async Task UnlockWebOrdersFromEmail(string email)
+		{
+            var b040Db = DataAccessB040.GetInstance();
+			await Task.Run(() => b040Db.UnlockFromEmail(email));
+        }
+		/// <summary>
+		/// Quick and dirty implementation for prelaunching purposes.   Customer does not access use the automatisch bestellen process.
+		/// </summary>
+		/// <param name="wp"></param>
+		/// <returns></returns>
+		[AllowAnonymous]
+		[HttpPost]
+		[Route("GenerateWebOrderFromStandards")]
+        public async Task<int> GenerateWebOrderFromStandards(WebOrderParametersModel wp)
+        {
+            modB040Config.lb040Config();
+			modLog.nLog("Api - Create Web Order From Standard requested.");
+            string email = wp.Email;
+            DateTime date = wp.Date;
+            string standardCode = wp.StandardCode ?? "1";
+            string dayOfWeekInDutch = modDutch.cDagInDeWeek(date);
+            var _b040 = DataAccessB040.GetInstance();
+            var customer = await _b040.GetWebCustomerByEmail(email);
+			if (customer == null) {
+                modLog.nLog("  ==> No such customer.");
+                return 0; }
+            modLog.nLog($"  ==> Getting order for {customer.KL_ID} on {date.ToString("dd/MMM/yyyy)")}.","API");
+            var orderId = await _b040.GetOrderIdByCustomerAndDate(customer.KL_ID, date);
+			if (orderId != 0) {
+                modLog.nLog("  ==> Order akready exists.");
+                return 0; }
+            var t = new TaskCompletionSource<int>();
+            var sthId = await _b040.GetStandardHIdByCustomerDayOfWeekCode(customer.KL_ID, dayOfWeekInDutch, standardCode);
+            if (sthId == 0){
+                modLog.nLog("  ==> No standards.");
+                return 0; }
+            var o = new bzBestel();
+            string document = "";
+            bool isParticulier = false;
+            await Task.Run(() => o.createBestelFromStandaard(sthId, date, ref document, ref isParticulier));
+            modLog.nLog($"  ==> Created {document}.");
+            return await _b040.GetOrderIdByDocument(document);
+        }
     }
 }
