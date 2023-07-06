@@ -212,10 +212,10 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("UnlockWebOrdersFromEmail")]
-        public async Task UnlockWebOrdersFromEmail(string email)
+        public async Task UnlockWebOrdersFromEmail(WebOrderParametersModel wp)
 		{
             var b040Db = DataAccessB040.GetInstance();
-			await Task.Run(() => b040Db.UnlockFromEmail(email));
+			await Task.Run(() => b040Db.UnlockFromEmail(wp.Email));
         }
 		/// <summary>
 		/// Quick and dirty implementation for prelaunching purposes.   Customer does not access use the automatisch bestellen process.
