@@ -63,6 +63,7 @@ namespace B040.Authentication.Controllers
         public async Task<bool> CreateClients()
         {
             var b040 = DataAccessB040.GetInstance();
+            ApiHelper apiHelper = new ApiHelper();
             AccountController accountController = new AccountController();
             List<ClientWithEmailModel> clientsWithEmail = b040.GetClientsWithEmail();
             foreach (ClientWithEmailModel c in clientsWithEmail)
@@ -76,13 +77,15 @@ namespace B040.Authentication.Controllers
                 {
                     string zerofilledAccount = ("00000" + c.Kl_Nummer.Trim()).Right(5);
                     string pwd = $"Pwd{zerofilledAccount}.";
-                    RegisterBindingModel m = new RegisterBindingModel()
+                    try
                     {
-                        Email = c.Kl_Email,
-                        Password = pwd,
-                        ConfirmPassword = pwd
-                    };
-                    await accountController.Register(m);
+                        await apiHelper.CreateUserAsync(c.Kl_Email, pwd);
+                    }
+                    catch (Exception ex)
+                    {
+                        Monitor.write($"{c.Kl_Email} was not created. {ex.Message}");
+                        continue;
+                    }
                 }
                 var u = _context.Users.FirstOrDefault(x => x.UserName == c.Kl_Email);
                 addRole("Client");
