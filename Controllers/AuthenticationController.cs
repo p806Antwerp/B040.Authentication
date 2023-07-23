@@ -106,6 +106,59 @@ namespace B040.Authentication.Controllers
             }
             return true;
         }
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("Admin/CreateClient")]
+        public async Task<OpResult>CreateClient(CreateClientModel cc)
+        {
+            string name = cc.Name;
+            string pwd = cc.Password;
+            OpResult or =  new OpResult();
+            ApiHelper apiHelper = new ApiHelper();
+            try
+            {
+                var exists = ExistsUser(new UserNamePasswordPairModel { UserName = name, Password = pwd });
+                if (exists.Exists == false)
+                {
+                    try
+                    {
+                        or = await apiHelper.CreateUserAsync(name, pwd);
+                    }
+                    catch (Exception ex)
+                    {
+                        or.Message = $"{name} was not created. {ex.Message}";
+                        or.Success = false;
+                        Monitor.write(or.Message);
+                    }
+                    if (or.Success == false) { return or; }
+
+                }
+                var u = _context.Users.FirstOrDefault(x => x.UserName == name);
+                addRole("Client");
+                void addRole(string roleName)
+                {
+                    var roleId = _context.Roles.FirstOrDefault(x => x.Name == roleName).Id;
+                    var ur = new IdentityUserRole()
+                    {
+                        UserId = u.Id,
+                        RoleId = roleId
+                    };
+                    if (u.Roles.Any(x => x.RoleId == roleId) == false)
+                    {
+                        u.Roles.Add(ur);
+                        _context.SaveChanges();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                or.Message= $"Could not create client {name}, {ex.Message}";
+                or.Success = false;
+                return or;
+            }
+            return or;
+        }
+ 
 
         [AllowAnonymous]
         [HttpPost]
