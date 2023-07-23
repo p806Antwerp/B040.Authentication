@@ -16,6 +16,7 @@ using Mg.Services;
 using System.Data.SqlTypes;
 using Swashbuckle.Swagger;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace B040.Authentication
 {
@@ -165,7 +166,7 @@ namespace B040.Authentication
                 {
                     if (response.IsSuccessStatusCode == false)
                     {
-                        or.Message=$"Registering failed, {userName}, {response.ReasonPhrase}";
+                        or.Message=$"Registering failed, [{userName}], {response.ReasonPhrase}";
                         or.Success = false;
                         Monitor.Console(or.Message);
                         return or;
@@ -264,12 +265,14 @@ namespace B040.Authentication
             string endPoint = $@"{_ApiClient.BaseAddress}api/Authentication/Admin/CreateClient";
             var httpClient = new HttpClient();
             var response  = new HttpResponseMessage();
-            var requestContent = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string,string>("username",name),
-                new KeyValuePair<string,string>("password",pwd),
-            });
-            //var cm = new CreateClientModel() { Name = name, Password = pwd };
+            //var requestContent = new FormUrlEncodedContent(new[]
+            //{
+            //    new KeyValuePair<string,string>("username",name),
+            //    new KeyValuePair<string,string>("password",pwd),
+            //});
+            var cm = new CreateClientModel() { Name = name, Password = pwd };
+            string json = JsonConvert.SerializeObject(cm);
+            var requestContent = new StringContent(json, Encoding.UTF8, "application/json");
             try
             {
                 response =  httpClient.PostAsync(endPoint,requestContent).Result;
