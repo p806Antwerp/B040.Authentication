@@ -133,7 +133,7 @@ namespace B040.Authentication.Controllers
 				{
 					try
 					{
-						Monitor.Console(bH.ToString());
+						Serilog.Log.Warning(bH.ToString());
 						cruds.UpdateBestH(bH, t);
 						foreach (var l in dto.Repository)
 						{
@@ -151,7 +151,7 @@ namespace B040.Authentication.Controllers
 					{
 						t.Rollback();
 						string msg = $"UpdateWebOrder Rolled Back. ({dto.CustomerName})";
-						Monitor.Console(msg);
+						Serilog.Log.Warning(msg);
 						opResult.Fail(msg);
 						opResult.Fail(ex.Message);
 					}
@@ -174,7 +174,7 @@ namespace B040.Authentication.Controllers
 			}
 			if (opResult.Success==false)
 			{
-				opResult.Monitor();
+				Serilog.Log.Warning(opResult.Message);
 			}
 			return opResult;
 		}
@@ -189,8 +189,8 @@ namespace B040.Authentication.Controllers
 			if (or.Success == false)
 			{
 				or.Fail("De vergrendeling is mislukt.");
-				or.Monitor();
-			}
+                Serilog.Log.Warning(or.Message);
+            }
 			return or;
 		}
 		[AllowAnonymous]
@@ -204,7 +204,7 @@ namespace B040.Authentication.Controllers
 			if (or.Success == false)
 			{
 				or.Fail("Could not unlock.");
-				or.Monitor();
+                Serilog.Log.Warning(or.Message); 
 			}
 			return or;
 		}

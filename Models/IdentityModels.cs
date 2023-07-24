@@ -53,7 +53,7 @@ namespace B040.Authentication.Models
             _connectionString = ConfigurationManager
                   .ConnectionStrings[connectionStringKey]
                    .ConnectionString;
-            Monitor.Console($"Connection (Auth): {_connectionString}");
+            Serilog.Log.Warning($"Connection (Auth): {_connectionString}");
             return _connectionString;
         }
         public ApplicationDbContext()

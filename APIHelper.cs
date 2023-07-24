@@ -17,6 +17,7 @@ using System.Data.SqlTypes;
 using Swashbuckle.Swagger;
 using Newtonsoft.Json;
 using System.Text;
+using Serilog;
 
 namespace B040.Authentication
 {
@@ -168,7 +169,7 @@ namespace B040.Authentication
                     {
                         or.Message=$"Registering failed, [{userName}], {response.ReasonPhrase}";
                         or.Success = false;
-                        Monitor.Console(or.Message);
+                        Log.Warning(or.Message);
                         return or;
                     }
                 }
@@ -177,7 +178,7 @@ namespace B040.Authentication
             {
                 or.Message = $"CreaetUser failed, {userName}, {ex.Message}";
                 or.Success = false;
-                Monitor.Console(or.Message);
+                Log.Warning(or.Message);
                 return or;
             }
             return or;
@@ -279,15 +280,17 @@ namespace B040.Authentication
             }
             catch (Exception ex)
             {
-                Monitor.Console($"{endPoint}");
+                Log.Warning($"{endPoint}");
                 or.Message = $"Could not Create Client {name}, {ex.Message}";
                 or.Success = false;
+                Log.Warning(or.Message);
                 return or;
             }
             if (response.IsSuccessStatusCode == false) {
-                Monitor.Console($"{endPoint}");
+                Log.Warning($"{endPoint}");
                 or.Message = $"Could not createClient {name}, Response: {response.ReasonPhrase}";
-                or.Success = false;      
+                or.Success = false;
+                Log.Warning(or.Message);
                 return or;
             }
             or = JsonConvert.DeserializeObject<OpResult>(response.Content.ReadAsStringAsync().Result);

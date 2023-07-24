@@ -19,6 +19,8 @@ using System.Security.Policy;
 using System.Runtime.InteropServices.ComTypes;
 using System.Web.Helpers;
 using System.Security.Principal;
+using Microsoft.VisualBasic.Logging;
+using Serilog;
 
 namespace B040.Authentication.Controllers
 {
@@ -31,7 +33,7 @@ namespace B040.Authentication.Controllers
         public AuthenticationController()
         {
             _context = new ApplicationDbContext();
-            Monitor.Console("Authentication Controller Connected.");
+            Serilog.Log.Warning("Authentication Controller Connected.");
         }
         [AllowAnonymous]
         [HttpPost]
@@ -83,7 +85,7 @@ namespace B040.Authentication.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Monitor.write($"{c.Kl_Email} was not created. {ex.Message}");
+                        Serilog.Log.Warning($"{c.Kl_Email} was not created. {ex.Message}");
                         continue;
                     }
                 }
@@ -128,7 +130,7 @@ namespace B040.Authentication.Controllers
                     {
                         or.Message = $"{name} was not created. {ex.Message}";
                         or.Success = false;
-                        Monitor.write(or.Message);
+                        Serilog.Log.Warning(or.Message);
                     }
                     if (or.Success == false) { return or; }
 
@@ -202,15 +204,15 @@ namespace B040.Authentication.Controllers
             if (model.UserName == null) { return rv; }
             if (model.Password == null) { return rv; }
             ApplicationUser u;
-            Monitor.Console($"Conn. string: {_context.Database.Connection.ConnectionString}");
-            Monitor.Console($"Current User: {WindowsIdentity.GetCurrent().Name}");
+            Serilog.Log.Warning($"Conn. string: {_context.Database.Connection.ConnectionString}");
+            Serilog.Log.Warning($"Current User: {WindowsIdentity.GetCurrent().Name}");
             try
             {
                 u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
             }
             catch (Exception ex)
             {
-                Monitor.Console($"GetRoles exception: {ex.Message}");
+                Serilog.Log.Warning($"GetRoles exception: {ex.Message}");
  
                 throw ex;
             }
