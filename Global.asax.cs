@@ -35,6 +35,7 @@ namespace B040.Authentication
         {
             string formattedDate = DateTime.Now.ToString("ddd dd/MMM/yy hh:mm:ss");
             formattedDate = formattedDate.Replace('/', '-');
+            formattedDate = formattedDate.Replace(':', '-');
             string latestLogFile = Directory.GetFiles(@"C:\Docs\", "logB040Api-" + formattedDate + "-*.txt")
                                 .OrderByDescending(x => x)
                                 .FirstOrDefault();
