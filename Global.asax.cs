@@ -27,7 +27,7 @@ namespace B040.Authentication
                 .WriteTo.File(
                     logFilePath,
                     rollingInterval: RollingInterval.Infinite,
-                    outputTemplate: "{Timestamp:yy/MMM/dd hh:mm ddd} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    outputTemplate: "{Timestamp:MMM/dd hh:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
         }
 
