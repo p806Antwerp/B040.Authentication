@@ -161,10 +161,17 @@ namespace B040.Authentication
                 Password = password,
                 ConfirmPassword = password
             };
+            string returnedId;
             try
             {
                 using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("api/Account/Register", data))
                 {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string responseContent = await response.Content.ReadAsStringAsync();
+                        dynamic responseData =  JsonConvert.DeserializeObject(responseContent);
+                        or.Message = responseData.Id;
+                    }
                     if (response.IsSuccessStatusCode == false)
                     {
                         or.Message=$"Registering failed, [{userName}], {response.ReasonPhrase}";
@@ -181,6 +188,7 @@ namespace B040.Authentication
                 Log.Warning(or.Message);
                 return or;
             }
+   
             return or;
         }
         public async Task CreateClientsAsync()
@@ -293,7 +301,8 @@ namespace B040.Authentication
                 Log.Warning(or.Message);
                 return or;
             }
-            or = JsonConvert.DeserializeObject<OpResult>(response.Content.ReadAsStringAsync().Result);
+            dynamic responseData = JsonConvert.DeserializeObject<OpResult>(response.Content.ReadAsStringAsync().Result);
+            or.Message = responseData.Message;
             return or;
         }
         class CreateClientModel

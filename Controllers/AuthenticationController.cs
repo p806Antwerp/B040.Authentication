@@ -136,6 +136,7 @@ namespace B040.Authentication.Controllers
 
                 }
                 var u = _context.Users.FirstOrDefault(x => x.UserName == name);
+                or.Message = u.Id;
                 addRole("Client");
                 void addRole(string roleName)
                 {

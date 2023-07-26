@@ -337,7 +337,7 @@ namespace B040.Authentication.Controllers
             {
                 return GetErrorResult(result);
             }
-            return Ok();
+            return Ok(new {Id = user.Id});
         }
         [AllowAnonymous]
         [HttpPost]
