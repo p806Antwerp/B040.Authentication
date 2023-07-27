@@ -199,9 +199,9 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("Admin/GetRoles")]
-        public List<String> GetRoles(UserNamePasswordPairModel model)
+        public UserDTO GetRoles(UserNamePasswordPairModel model)
         {
-            var rv = new List<String>();
+            var rv = new UserDTO();
             if (model.UserName == null) { return rv; }
             if (model.Password == null) { return rv; }
             ApplicationUser u;
@@ -223,9 +223,12 @@ namespace B040.Authentication.Controllers
             var result = hasher.VerifyHashedPassword(u.PasswordHash, model.Password);
             if (result != PasswordVerificationResult.Success) { return rv; }
             // return the role name(s)
+            rv.WebAccountId = u.Id;
+            rv.WebAccountName = model.UserName;
+            rv.Roles = new List<string>();
             foreach (var r in u.Roles)
             {
-                rv.Add(_context.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
+                rv.Roles.Add(_context.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
             }
             return rv;
         }
