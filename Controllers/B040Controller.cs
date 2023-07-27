@@ -13,6 +13,7 @@ using Mg.Services;
 using B040.Services.Cruds;
 using System.Web.Http.Results;
 using System.Web.Http.ExceptionHandling;
+using System.Web.Compilation;
 
 namespace B040.Authentication.Controllers
 {
@@ -22,11 +23,11 @@ namespace B040.Authentication.Controllers
 	{
         [AllowAnonymous]
         [HttpGet]
-        [Route("GetAllArtikelsFromEmail")]
-        public async Task<List<ArtikelModel>> GetAllArtikelsFromEmail(string email)
+        [Route("GetAllArtikelsFromWebAccountId")]
+        public async Task<List<ArtikelModel>> GetAllArtikelsFromWebAccountId(string webAccountId)
         {
             var _b040 = DataAccessB040.GetInstance();
-            return Task.Run(() =>  _b040.GetArtikelsFromEmail(email)).Result;
+            return Task.Run(() =>  _b040.GetArtikelsFromWebAccountId(webAccountId)).Result;
         }
 		[AllowAnonymous]
 		[HttpGet]
@@ -42,17 +43,17 @@ namespace B040.Authentication.Controllers
 		[Route("GetWebOrder")]
 		public async Task<WebOrderDto> GetWebOrder(WebOrderParametersModel wp)
 		{
-			string email = wp.Email;
+			string webAccountId = wp.WebAccountId;
 			DateTime date = wp.Date;
 			string standardCode= wp.StandardCode;
 			var dtoTask = new TaskCompletionSource<WebOrderDto>();
 			var dto = new WebOrderDto();
 			var _b040 = DataAccessB040.GetInstance();
-			var customer = await _b040.GetWebCustomerByEmail(email);
+			var customer = await _b040.GetWebCustomerByWebAccountId(webAccountId);
 			if (customer == null)
 			{
 				dto.Success = false;
-				dto.Message = $"Email [{email}] komt niet overeen met een Web klant.";
+				dto.Message = $"{webAccountId} is ongeldig.";
 				dtoTask.SetResult(dto);
 				return await dtoTask.Task;
 			}
@@ -215,7 +216,7 @@ namespace B040.Authentication.Controllers
         public async Task UnlockWebOrdersFromEmail(WebOrderParametersModel wp)
 		{
             var b040Db = DataAccessB040.GetInstance();
-			await Task.Run(() => b040Db.UnlockFromEmail(wp.Email));
+			await Task.Run(() => b040Db.UnlockFromWebAccountId(wp.WebAccountId));
         }
 		/// <summary>
 		/// Quick and dirty implementation for prelaunching purposes.   Customer does not access use the automatisch bestellen process.
@@ -229,12 +230,12 @@ namespace B040.Authentication.Controllers
         {
             modB040Config.lb040Config();
 			modLog.nLog("Api - Create Web Order From Standard requested.");
-            string email = wp.Email;
+            string webAccountId = wp.WebAccountId;
             DateTime date = wp.Date;
             string standardCode = wp.StandardCode ?? "1";
             string dayOfWeekInDutch = modDutch.cDagInDeWeek(date);
             var _b040 = DataAccessB040.GetInstance();
-            var customer = await _b040.GetWebCustomerByEmail(email);
+            var customer = await _b040.GetWebCustomerByWebAccountId(webAccountId);
 			if (customer == null) {
                 modLog.nLog("  ==> No such customer.");
                 return 0; }
