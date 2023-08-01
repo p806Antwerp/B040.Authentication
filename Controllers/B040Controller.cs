@@ -212,8 +212,8 @@ namespace B040.Authentication.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        [Route("UnlockWebOrdersFromEmail")]
-        public async Task UnlockWebOrdersFromEmail(WebOrderParametersModel wp)
+        [Route("UnlockWebOrdersFromWebAccountId")]
+        public async Task UnlockWebOrdersFromWebAccountId(WebOrderParametersModel wp)
 		{
             var b040Db = DataAccessB040.GetInstance();
 			await Task.Run(() => b040Db.UnlockFromWebAccountId(wp.WebAccountId));
