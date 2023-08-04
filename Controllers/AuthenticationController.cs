@@ -251,52 +251,55 @@ namespace B040.Authentication.Controllers
                 .ToList();
             return results;
         }
-        [AllowAnonymous]
-        [HttpPost]
-        [Route("Admin/UpdateUser")]
-        public async Task<OpResult> UpdateUser(UpdateUserDTO updateUser)
-        {
-            OpResult or = new OpResult();
-            if (updateUser == null)
-            {
-                or.Message = "Null Parameter in UpdateUser Endpoint";
-                or.Success = false;
-                return or;
-            }
-            _context = new ApplicationDbContext();
-            UserManager<ApplicationUser> _userManager =
-                new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(_context));
+    //    [AllowAnonymous]
+    //    [HttpPost]
+    //    [Route("Admin/UpdateUser")]
+    //    // Implemented in Account(Controller)
+    //    // For some reason UserManager does not get initialized correctly here 
+    //    // Some of the Password requirement get lost.
+    //    public async Task<OpResult> UpdateUser(UpdateUserDTO updateUser)
+    //    {
+    //        OpResult or = new OpResult();
+    //        if (updateUser == null)
+    //        {
+    //            or.Message = "Null Parameter in UpdateUser Endpoint";
+    //            or.Success = false;
+    //            return or;
+    //        }
+    //        _context = new ApplicationDbContext();
+    //        UserManager<ApplicationUser> _userManager =
+    //            new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(_context));
 
-            var user = await _userManager.FindByIdAsync(updateUser.WebAccountId);
-            if (user == null)
-            {
-                or.Message = "Invalid User Id in Update User Endpoint";
-                or.Success = false;
-                return or;
-            }
-            if (user.UserName.ToUpper() != updateUser.WebAccountName.ToUpper())
-            {
-                user.UserName = updateUser.WebAccountName;
-            }
-            var result = await _userManager
-                .PasswordValidator.ValidateAsync(updateUser.Password);
-            if ( result.Succeeded == false)
-            {
-                or.Message = result.Errors.FirstOrDefault();
-                or.Success = false;
-                return or;
-            }
-            var newPasswordHash = _userManager.PasswordHasher.HashPassword(updateUser.Password);
+    //        var user = await _userManager.FindByIdAsync(updateUser.WebAccountId);
+    //        if (user == null)
+    //        {
+    //            or.Message = "Invalid User Id in Update User Endpoint";
+    //            or.Success = false;
+    //            return or;
+    //        }
+    //        if (user.UserName.ToUpper() != updateUser.WebAccountName.ToUpper())
+    //        {
+    //            user.UserName = updateUser.WebAccountName;
+    //        }
+    //        var result = await _userManager
+    //            .PasswordValidator.ValidateAsync(updateUser.Password);
+    //        if ( result.Succeeded == false)
+    //        {
+    //            or.Message = result.Errors.FirstOrDefault();
+    //            or.Success = false;
+    //            return or;
+    //        }
+    //        var newPasswordHash = _userManager.PasswordHasher.HashPassword(updateUser.Password);
 
-            user.PasswordHash= newPasswordHash;
-            var updateResult = await _userManager.UpdateAsync(user);
-            if (updateResult.Succeeded==false)
-            {
-                or.Message = updateResult.Errors.FirstOrDefault();
-                or.Success = false;
-                return or;
-            }
-            return or;
-        }
+    //        user.PasswordHash= newPasswordHash;
+    //        var updateResult = await _userManager.UpdateAsync(user);
+    //        if (updateResult.Succeeded==false)
+    //        {
+    //            or.Message = updateResult.Errors.FirstOrDefault();
+    //            or.Success = false;
+    //            return or;
+    //        }
+    //        return or;
+    //    }
     }
 }
