@@ -423,6 +423,52 @@ namespace B040.Authentication.Controllers
             }
             return Ok();
         }
+        // POST api/Account/UpdateUser
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("UpdateUser")]
+        public async Task<OpResult> UpdateUser(UpdateUserDTO updateUser)
+        {
+            OpResult or = new OpResult();
+            if (updateUser == null)
+            {
+                or.Message = "Null Parameter in UpdateUser Endpoint";
+                or.Success = false;
+                return or;
+            }
+            var user = UserManager.FindById(updateUser.WebAccountId);
+            if (user == null)
+            {
+                or.Message = "Invalid User Id in Update User Endpoint";
+                or.Success = false;
+                return or;
+            }
+            if (user.UserName.ToUpper() != updateUser.WebAccountName.ToUpper())
+            {
+                user.UserName = updateUser.WebAccountName;
+            }
+            var result = await UserManager
+                                 .PasswordValidator.ValidateAsync(updateUser.Password);
+            if (result.Succeeded == false)
+            {
+                or.Message = "Het paswoord is niet geldig";
+                or.Success = false;
+                return or;
+            }
+
+            var newPasswordHash = UserManager.PasswordHasher.HashPassword(updateUser.Password);
+
+            user.PasswordHash = newPasswordHash;
+            var updateResult = UserManager.Update(user);
+            if (updateResult.Succeeded == false)
+            {
+                or.Message = updateResult.Errors.FirstOrDefault();
+                or.Success = false;
+                return or;
+            }
+            return or;
+        }
+
 
         protected override void Dispose(bool disposing)
         {

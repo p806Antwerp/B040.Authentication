@@ -352,7 +352,6 @@
     <Compile Include="Models\AuthenticationModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\LockModel.cs" />
-    <Compile Include="Models\UserDTO.cs" />
     <Compile Include="Models\WebOrderDto.cs" />
     <Compile Include="Models\WebOrderDtoDetail.cs" />
     <Compile Include="Models\WebOrderParametersModel.cs" />
