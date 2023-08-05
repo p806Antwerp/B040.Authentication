@@ -18,6 +18,7 @@ using Swashbuckle.Swagger;
 using Newtonsoft.Json;
 using System.Text;
 using Serilog;
+using b040;
 
 namespace B040.Authentication
 {
@@ -31,7 +32,8 @@ namespace B040.Authentication
         private void InitializeClient()
         {
             _ApiClient = new HttpClient();
-            string api = ConfigurationManager.AppSettings["api"];
+            // string api = ConfigurationManager.AppSettings["api"];
+            string api = modB040Config.Generic("API-ADDRESS");
             Console.WriteLine(api);
             try
             {

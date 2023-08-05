@@ -209,7 +209,6 @@ namespace B040.Authentication.Controllers
 			}
 			return or;
 		}
-
         [AllowAnonymous]
         [HttpPost]
         [Route("UnlockWebOrdersFromWebAccountId")]
@@ -255,6 +254,14 @@ namespace B040.Authentication.Controllers
             await Task.Run(() => o.createBestelFromStandaard(sthId, date, ref document, ref isParticulier));
             modLog.nLog($"  ==> Created {document}.");
             return await _b040.GetOrderIdByDocument(document);
+        }
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("GetWebAccountApproved")]
+        public async Task<Boolean> GetWebAccountApprovedASync(string webaccountId)
+        {
+            var _b040 = DataAccessB040.GetInstance();
+			return await _b040.GetWebAccountApprovedAsync(webaccountId);
         }
     }
 }
