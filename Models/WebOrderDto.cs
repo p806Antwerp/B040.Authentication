@@ -13,6 +13,7 @@ namespace B040.Authentication.Models
 		public int BestH_Id { get; set; }
 		public bool Success { get; set; } = true;
 		public string Message { get; set; } = "";
+		public string Info { get; set; } = "";
 		public List<WebOrderDtoDetail> Repository { get; set; } = new List<WebOrderDtoDetail>();
 	}
 }

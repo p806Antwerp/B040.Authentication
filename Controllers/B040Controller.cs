@@ -14,6 +14,7 @@ using B040.Services.Cruds;
 using System.Web.Http.Results;
 using System.Web.Http.ExceptionHandling;
 using System.Web.Compilation;
+using Serilog;
 
 namespace B040.Authentication.Controllers
 {
@@ -59,7 +60,8 @@ namespace B040.Authentication.Controllers
 			}
 			dto.CustomerName = customer.KL_Naam;
 			dto.DayOfWeekInDutch = modDutch.cDagInDeWeek(date);
-			var orderId = await _b040.GetOrderIdByCustomerAndDate(customer.KL_ID, date);
+			var bestelHeader = await _b040.GetOrderHeaderByCustomerAndDate(customer.KL_ID, date);
+			int orderId = bestelHeader?.BestH_Id ?? 0;
 			if (orderId == 0)
 			{
 				dto.Success = false;
@@ -86,6 +88,7 @@ namespace B040.Authentication.Controllers
 			}
 			dto.Repository = q.CastingList<WebOrderDtoDetail, BestDModelX>();
 			dto.BestH_Id = orderId;
+			dto.Info = bestelHeader.BestH_Info;
 			dtoTask.SetResult(dto);
 			return await dtoTask.Task;
 		}
@@ -129,6 +132,7 @@ namespace B040.Authentication.Controllers
 				int totalLines = dto.Repository.Count();
 				bH.besth_totLijnen = totalLines;
 				bH.besth_totTebetalen = totalTeBetalen;
+				bH.BestH_Info = dto.Info;
 				var cruds = new Cruds(b040Db.GetConnection());
 				using (var t = DataAccessB040.BeginTransaction())
 				{
