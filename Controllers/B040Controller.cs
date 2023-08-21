@@ -260,8 +260,18 @@ namespace B040.Authentication.Controllers
         [Route("GetWebAccountApproved")]
         public async Task<Boolean> GetWebAccountApprovedASync(string webaccountId)
         {
+			bool rv = false;
             var _b040 = DataAccessB040.GetInstance();
-			return await _b040.GetWebAccountApprovedAsync(webaccountId);
+			try
+			{
+                rv = await _b040.GetWebAccountApprovedAsync(webaccountId);
+            }
+			catch (Exception ex)
+			{
+				Log.Warning("GetAccountsApproved Endpoing Failure");
+				Log.Warning(ex.Message);
+			}
+			return rv;
         }
     }
 }
