@@ -44,6 +44,8 @@ namespace B040.Authentication.Controllers
 		[Route("GetWebOrder")]
 		public async Task<WebOrderDto> GetWebOrder(WebOrderParametersModel wp)
 		{
+			Log.Warning("GetWebOrder");
+			Log.Warning($"[{wp.WebAccountId}], {wp.Date.ToString("dd-MMM-yy")}");
 			string webAccountId = wp.WebAccountId;
 			DateTime date = wp.Date;
 			string standardCode= wp.StandardCode;
@@ -140,15 +142,18 @@ namespace B040.Authentication.Controllers
 					{
 						Serilog.Log.Warning(bH.ToString());
 						cruds.UpdateBestH(bH, t);
+						// B050 6298.4 delete detail lines.
+						cruds.DeteteBestDByBestH_Id(dto.BestH_Id, t);
 						foreach (var l in dto.Repository)
 						{
 							BestDModel bD = l.Casting<BestDModel>();
-							if (bD.BestD_ID == 0) 
-							{ // B040 6296.3 add header id to added orderline
-								bD.BestD_BestH = dto.BestH_Id;
-								cruds.InsertBestD(bD, t);
-							}
-							else { cruds.UpdateBestD(bD, t); }
+							// if (bD.BestD_ID == 0) 
+							// { // B040 6296.3 add header id to added orderline
+							bD.BestD_ID = 0;
+							bD.BestD_BestH = dto.BestH_Id;
+							cruds.InsertBestD(bD, t);
+							// }
+							//else { cruds.UpdateBestD(bD, t); }
 						}
 						t.Commit();
 					}
