@@ -107,7 +107,8 @@ namespace B040.Authentication.Controllers
 		[Route("UpdateWebOrder")]
 		public async Task<OpResult> UpdateWebOrder(WebOrderDto dto)
 		{
-			BestHModel bH;
+            Serilog.Log.Warning($"UpdateWebOrder {dto.BestH_Id}");
+            BestHModel bH;
 			var b040Db = DataAccessB040.GetInstance();
 			modB040Config.lb040Config();
 			var opResult = new OpResult();
@@ -116,8 +117,11 @@ namespace B040.Authentication.Controllers
 			{
 				// bH = await Task<BestHModel>.Run(() => b040Db.GetBestHFromId(dto.BestH_Id, typFId));
 				bH = b040Db.GetBestHFromId(dto.BestH_Id, typFId);
-				double totalTeBetalen = await ComputeTeBetalen();
-				async Task<double> ComputeTeBetalen()
+                Serilog.Log.Warning($"==> GetBestHFromId {bH.BestH_Id}");
+
+                double totalTeBetalen = await ComputeTeBetalen();
+                Serilog.Log.Warning($"==> Compute Te Betalen {totalTeBetalen:n2}");
+                async Task<double> ComputeTeBetalen()
 				{
 					KlantenModel k = await b040Db.GetKlantenById(bH.BestH_Klant ?? 0);
 					var p = new bzPrice();
@@ -142,9 +146,11 @@ namespace B040.Authentication.Controllers
 					{
 						Serilog.Log.Warning(bH.ToString());
 						cruds.UpdateBestH(bH, t);
-						// B050 6298.4 delete detail lines.
-						cruds.DeteteBestDByBestH_Id(dto.BestH_Id, t);
-						foreach (var l in dto.Repository)
+                        Serilog.Log.Warning($"==> UpdateBestH {bH.BestH_Id}");
+                        // B040 6298.4 delete detail lines.
+                        cruds.DeteteBestDByBestH_Id(dto.BestH_Id, t);
+                        Serilog.Log.Warning($"==> DeleteBestDByBEstH_Id {dto.BestH_Id}");
+                        foreach (var l in dto.Repository)
 						{
 							BestDModel bD = l.Casting<BestDModel>();
 							// if (bD.BestD_ID == 0) 
