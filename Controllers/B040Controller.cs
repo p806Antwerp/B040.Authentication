@@ -42,15 +42,15 @@ namespace B040.Authentication.Controllers
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("GetWebOrder")]
-		public async Task<WebOrderDto> GetWebOrder(WebOrderParametersModel wp)
+		public async Task<WebOrderDtoShared> GetWebOrder(WebOrderParametersModel wp)
 		{
 			Log.Warning("GetWebOrder");
 			Log.Warning($"[{wp.WebAccountId}], {wp.Date.ToString("dd-MMM-yy")}");
 			string webAccountId = wp.WebAccountId;
 			DateTime date = wp.Date;
 			string standardCode= wp.StandardCode;
-			var dtoTask = new TaskCompletionSource<WebOrderDto>();
-			var dto = new WebOrderDto();
+			var dtoTask = new TaskCompletionSource<WebOrderDtoShared>();
+			var dto = new WebOrderDtoShared();
 			var _b040 = DataAccessB040.GetInstance();
 			var customer = await _b040.GetWebCustomerByWebAccountId(webAccountId);
 			if (customer == null)
@@ -91,6 +91,7 @@ namespace B040.Authentication.Controllers
 			dto.Repository = q.CastingList<WebOrderDtoDetail, BestDModelX>();
 			dto.BestH_Id = orderId;
 			dto.Info = bestelHeader.BestH_Info;
+			dto.ProductionPlanStartingTime = modB040Config.Generic("PRODUCTIONPLANSTARTINGTIME");
 			dtoTask.SetResult(dto);
 			return await dtoTask.Task;
 		}
@@ -105,7 +106,7 @@ namespace B040.Authentication.Controllers
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("UpdateWebOrder")]
-		public async Task<OpResult> UpdateWebOrder(WebOrderDto dto)
+		public async Task<OpResult> UpdateWebOrder(WebOrderDtoShared dto)
 		{
             Serilog.Log.Warning($"UpdateWebOrder {dto.BestH_Id}");
             BestHModel bH;
@@ -201,7 +202,7 @@ namespace B040.Authentication.Controllers
 		{
 			modB040Config.lb040Config();
 			var or = new OpResult();
-			or.Success = ModLock.lLock(0, m.Table, m.Id,"Web");
+			or.Success = ModLock.lLock(0, m.Lock_table, m.Lock_LockedPK ?? 0,"Web");
 			if (or.Success == false)
 			{
 				or.Fail("De vergrendeling is mislukt.");
@@ -216,7 +217,7 @@ namespace B040.Authentication.Controllers
 		{
 			modB040Config.lb040Config();
 			var or = new OpResult();
-			ModLock.unLock(m.Table, m.Id);
+			ModLock.unLock(m.Lock_table, m.Lock_LockedPK ?? 0);
 			if (or.Success == false)
 			{
 				or.Fail("Could not unlock.");

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace B040.Authentication.Models
 {
-	public class WebOrderDto
+	public class WebOrderDtoShared
 	{
 		public string CustomerName { get; set; }
 		public string DayOfWeekInDutch { get; set; }
@@ -14,6 +14,7 @@ namespace B040.Authentication.Models
 		public bool Success { get; set; } = true;
 		public string Message { get; set; } = "";
 		public string Info { get; set; } = "";
+		public string ProductionPlanStartingTime { get; set; }
 		public List<WebOrderDtoDetail> Repository { get; set; } = new List<WebOrderDtoDetail>();
 	}
 }

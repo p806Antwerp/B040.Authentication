@@ -345,8 +345,7 @@
     <Compile Include="Models\AccountViewModels.cs" />
     <Compile Include="Models\AuthenticationModels.cs" />
     <Compile Include="Models\IdentityModels.cs" />
-    <Compile Include="Models\LockModel.cs" />
-    <Compile Include="Models\WebOrderDto.cs" />
+    <Compile Include="Models\WebOrderDtoShared.cs" />
     <Compile Include="Models\WebOrderDtoDetail.cs" />
     <Compile Include="Models\WebOrderParametersModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
