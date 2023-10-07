@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace B040.Authentication.Models
 
 {
-	public class WebOrderDtoDetail
+	public class WebOrderDtoDetailShared
 	{
 		public int? BestD_ID { get; set; }
 		public int? BestD_BestH { get; set; }
@@ -22,5 +22,7 @@ namespace B040.Authentication.Models
 		public string Art_Nr { get; set; }
 		public bool Art_Snijden { get; set; }
 		public int Eenh_Exponent { get; set; }
+		public bool Art_Notify { get; set; }
+		public bool BestD_Notified { get; set; }
 	}
 }

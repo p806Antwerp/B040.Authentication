@@ -15,6 +15,6 @@ namespace B040.Authentication.Models
 		public string Message { get; set; } = "";
 		public string Info { get; set; } = "";
 		public string ProductionPlanStartingTime { get; set; }
-		public List<WebOrderDtoDetail> Repository { get; set; } = new List<WebOrderDtoDetail>();
+		public List<WebOrderDtoDetailShared> Repository { get; set; } = new List<WebOrderDtoDetailShared>();
 	}
 }

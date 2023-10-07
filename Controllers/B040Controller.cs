@@ -30,14 +30,22 @@ namespace B040.Authentication.Controllers
             var _b040 = DataAccessB040.GetInstance();
             return Task.Run(() =>  _b040.GetArtikelsFromWebAccountId(webAccountId)).Result;
         }
-		[AllowAnonymous]
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("GetAllActiveWebArticles")]
+        public async Task<List<ArtikelModel>> GetAllActiveWebArticles()
+        {
+            var _b040 = DataAccessB040.GetInstance();
+            return Task.Run(() => _b040.GetAllActiveWebArticles()).Result;
+        }
+        [AllowAnonymous]
 		[HttpGet]
-		[Route("GetArtikelFromId")]
-		public async Task<ArtikelModel> GetArtikelsFromId(string idString)
+		[Route("GetArtikelXDtoSharedFromId")]
+		public async Task<ArtikelXDtoShared> GetArtikelXDtoSharedFromId(string idString)
 		{
 			int id = int.Parse(idString);
 			var _b040 = DataAccessB040.GetInstance();
-			return Task.Run(() => _b040.GetArtikelFromId(id)).Result;
+			return Task.Run(() => _b040.GetArtikelXDtoSharedFromId(id)).Result;
 		}
 		[AllowAnonymous]
 		[HttpPost]
@@ -73,7 +81,7 @@ namespace B040.Authentication.Controllers
 			}
 			var q = await _b040.GetOrderById(orderId);
 			int count = q.Count();
-			if (count < 2)
+			if (count < 1)
 			{
 				dto.Success = false;
 				dto.Message = "Deze bestelling kan niet via Web worden aangepast (minder dan 2 lijnen).";
@@ -88,7 +96,7 @@ namespace B040.Authentication.Controllers
 				dtoTask.SetResult(dto);
 				return await dtoTask.Task;
 			}
-			dto.Repository = q.CastingList<WebOrderDtoDetail, BestDModelX>();
+			dto.Repository = q.CastingList<WebOrderDtoDetailShared, BestDModelX>();
 			dto.BestH_Id = orderId;
 			dto.Info = bestelHeader.BestH_Info;
 			dto.ProductionPlanStartingTime = modB040Config.Generic("PRODUCTIONPLANSTARTINGTIME");
@@ -108,6 +116,19 @@ namespace B040.Authentication.Controllers
 		[Route("UpdateWebOrder")]
 		public async Task<OpResult> UpdateWebOrder(WebOrderDtoShared dto)
 		{
+			// 6301.07 Web Article Management
+			// create a list of the artikels for which we need a notification report
+			List<int> artikelsToNotify = new List<int>();
+			try
+			{
+                artikelsToNotify = (List<int>)dto.Repository
+                    .Where(x =>(x.Art_Notify==true) && (x.BestD_Notified == false))
+                    .Select(x => x.BestD_Artikel ?? 0).ToList();
+            }
+            catch (Exception ex)
+			{
+				Serilog.Log.Error(ex.Message);
+			}
             Serilog.Log.Warning($"UpdateWebOrder {dto.BestH_Id}");
             BestHModel bH;
 			var b040Db = DataAccessB040.GetInstance();
@@ -153,14 +174,19 @@ namespace B040.Authentication.Controllers
                         Serilog.Log.Warning($"==> DeleteBestDByBEstH_Id {dto.BestH_Id}");
                         foreach (var l in dto.Repository)
 						{
+                           
 							BestDModel bD = l.Casting<BestDModel>();
 							// if (bD.BestD_ID == 0) 
-							// { // B040 6296.3 add header id to added orderline
+							// B040 6296.3 add header id to added orderline
 							bD.BestD_ID = 0;
-							bD.BestD_BestH = dto.BestH_Id;
-							cruds.InsertBestD(bD, t);
-							// }
-							//else { cruds.UpdateBestD(bD, t); }
+                            bD.BestD_BestH = dto.BestH_Id;
+                            // 6301.07 Web Article Management
+                            if (l.Art_Notify) 
+							{
+								Serilog.Log.Warning($"Notified set {bD.BestD_Omschrijving}");
+								bD.BestD_Notified = true; 
+							}
+                            cruds.InsertBestD(bD, t);
 						}
 						t.Commit();
 					}
@@ -168,13 +194,14 @@ namespace B040.Authentication.Controllers
 					{
 						t.Rollback();
 						string msg = $"UpdateWebOrder Rolled Back. ({dto.CustomerName})";
-						Serilog.Log.Warning(msg);
+						Serilog.Log.Error(msg);
 						opResult.Fail(msg);
 						opResult.Fail(ex.Message);
 					}
 				}
 				if (opResult.Success)
 				{
+					Serilog.Log.Warning("Update succeeded");
 					ModLock.unLock(cruds.GetBestHTableName(), dto.BestH_Id);
 					modLog.nLog(
 						 $"{dto.CustomerName}",
@@ -192,9 +219,53 @@ namespace B040.Authentication.Controllers
 			if (opResult.Success==false)
 			{
 				Serilog.Log.Warning(opResult.Message);
+				return opResult;
 			}
-			return opResult;
-		}
+            // 6301.07 Web Article Management
+            if (artikelsToNotify.Count()>0)
+			{
+				try
+				{
+					opResult = await Task.Run(() => ReportWebOrderNotifications(dto.BestH_Id, artikelsToNotify));
+                }
+                catch (Exception )
+				{
+
+				}
+			};
+            return opResult;
+            // 6301.07 Web Article Management
+            OpResult ReportWebOrderNotifications(int bestHId, List<int> artikelIds = null)
+            {
+                opResult = new OpResult();
+                UitzonderlijkDocumentInfoModel info = b040Db.GetUitzonderlijkDocumentInfo(bestHId);
+                List<NotifiedArtikelModel> notifiedArtikels = b040Db.GetNotifiedArtikels(bestHId);
+                if (artikelIds == null) { artikelIds = notifiedArtikels.Select(x => x.BestD_Artikel).ToList(); }
+                if (artikelIds == null) { return opResult; }
+                var parameters = new bzUitzonderlijkDocument.uitzondelijkdocument_variabelen();
+                parameters.telefoon = $"Tel: {info.Adr_Telefoon}";
+                parameters.komthalen = info.BestH_KomtHalen ? "Komt Halen" : "Sturen";
+                parameters.klant_naam = info.Kl_Naam;
+                parameters.adres = info.Adr_Adres;
+                parameters.klantNummer = $"Klant {info.KL_Nummer}";
+                parameters.info = info.BestH_Info;
+                foreach (var n in notifiedArtikels.Where(x => artikelIds.Contains(x.BestD_Artikel)))
+                {
+                    parameters.tour = n.BestD_Tour;
+                    parameters.hoeveelheid = n.BestD_Hoev1.ToString();
+                    parameters.artikel_omschrijving = n.BestD_Omschrijving;
+                    parameters.voorafdrukken = "Web";
+                    parameters.artikel = n.BestD_Artikel;
+                    var u = new bzUitzonderlijkDocument();
+                    parameters.postnummer_en_gemeente = (string)u.format_postnummer_adres(info.Adr_PostNummer, info.Adr_Gemeente);
+                    parameters.datum_levering = u.format_date(info.BestH_DatLevering);
+                    u.print(parameters);
+                    Serilog.Log.Warning($"{parameters.artikel_omschrijving} notified.");
+
+                }
+                return opResult;
+            }
+        }
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("LockWebOrder")]
