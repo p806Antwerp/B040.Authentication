@@ -20,6 +20,7 @@ using System.Linq;
 using Mg.Services;
 using B040.Services;
 using B040.Services.Models;
+using MySql.Data.MySqlClient;
 
 namespace B040.Authentication.Controllers
 {
@@ -30,9 +31,11 @@ namespace B040.Authentication.Controllers
         private const string LocalLoginProvider = "Local";
         private ApplicationUserManager _userManager;
         private ApplicationDbContext _context;
+        private bool _mariaDB;
         public AccountController()
         {
             _context = new ApplicationDbContext();
+            _mariaDB = Environment.GetEnvironmentVariable("B040_ACTIVE_AUTH", EnvironmentVariableTarget.Machine) == "MARIADB";
         }
 
         public AccountController(ApplicationUserManager userManager,
@@ -436,7 +439,25 @@ namespace B040.Authentication.Controllers
                 or.Success = false;
                 return or;
             }
-            var user = UserManager.FindById(updateUser.WebAccountId);
+            ApplicationUser user = new ApplicationUser();
+            if (_mariaDB)
+            {
+                string loadUser = "SELECT * FROM AspNetUsers WHERE Id = @Id";
+                MySqlParameter[] parameters = {
+                        new MySqlParameter("Id", updateUser.WebAccountId)};
+                user = MariaDBHelper.ExecuteQuery<ApplicationUser>(loadUser, reader =>
+                {
+                    return new ApplicationUser
+                    {
+                        Id = reader["Id"].ToString(),
+                        UserName = reader["UserName"].ToString(),
+                    };
+                }, parameters).FirstOrDefault();
+            }
+            else
+            {
+                user = UserManager.FindById(updateUser.WebAccountId);
+            }
             if (user == null)
             {
                 or.Message = "Invalid User Id in Update User Endpoint";
@@ -457,14 +478,42 @@ namespace B040.Authentication.Controllers
             }
 
             var newPasswordHash = UserManager.PasswordHasher.HashPassword(updateUser.Password);
-
             user.PasswordHash = newPasswordHash;
-            var updateResult = UserManager.Update(user);
-            if (updateResult.Succeeded == false)
+            if (_mariaDB)
             {
-                or.Message = updateResult.Errors.FirstOrDefault();
-                or.Success = false;
-                return or;
+                string updateUserSql = @"
+                        UPDATE `Auth-B040`.`AspNetUsers`
+                            SET
+                            `Email` = '',
+                            `EmailConfirmed` = 1,
+                            `PasswordHash` = @PasswordHash,
+                            `SecurityStamp` = '',
+                            `PhoneNumber` = '',
+                            `PhoneNumberConfirmed` = 0,
+                            `TwoFactorEnabled` = 0,
+                            `LockoutEndDateUtc` = 0,
+                            `LockoutEnabled` = 0,
+                            `AccessFailedCount` = 0,
+                            `UserName` = @UserName
+                            WHERE `Id` = @Id;
+                            ";
+                MySqlParameter[] parameters = {
+                                new MySqlParameter("@Id", user.Id),
+                                new MySqlParameter("@UserName", user.UserName),
+                                new MySqlParameter("@PasswordHash", user.PasswordHash)
+                            };
+                MariaDBHelper.ExecuteNonQuery(updateUserSql, parameters);
+            }
+            else
+            {
+                IdentityResult updateResult = new IdentityResult();
+                updateResult = UserManager.Update(user);
+                if (updateResult.Succeeded == false)
+                {
+                    or.Message = updateResult.Errors.FirstOrDefault();
+                    or.Success = false;
+                    return or;
+                }
             }
             return or;
         }

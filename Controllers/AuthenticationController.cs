@@ -22,6 +22,11 @@ using System.Security.Principal;
 using Microsoft.VisualBasic.Logging;
 using Serilog;
 using System.Web;
+using System.Data;
+using Microsoft.VisualBasic.ApplicationServices;
+using MySql.Data.MySqlClient;
+using System.Data.SqlClient;
+using static b040.Productielijst;
 
 namespace B040.Authentication.Controllers
 {
@@ -31,10 +36,12 @@ namespace B040.Authentication.Controllers
     public class AuthenticationController : ApiController
     {
         private ApplicationDbContext _context;
+        private bool _mariaDB;
         public AuthenticationController()
         {
             _context = new ApplicationDbContext();
-            Serilog.Log.Warning("Authentication Controller Connected.");
+            Serilog.Log.Warning("ApplicationDbContext Created.");
+            _mariaDB = Environment.GetEnvironmentVariable("B040_ACTIVE_AUTH", EnvironmentVariableTarget.Machine) == "MARIADB";
         }
         [AllowAnonymous]
         [HttpPost]
@@ -112,11 +119,11 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("Admin/CreateClient")]
-        public async Task<OpResult>CreateClient(CreateClientModel cc)
+        public async Task<OpResult> CreateClient(CreateClientModel cc)
         {
             string name = cc.Name;
             string pwd = cc.Password;
-            OpResult or =  new OpResult();
+            OpResult or = new OpResult();
             ApiHelper apiHelper = new ApiHelper();
             try
             {
@@ -125,7 +132,37 @@ namespace B040.Authentication.Controllers
                 {
                     try
                     {
-                        or = await apiHelper.CreateUserAsync(name, pwd);
+                        if (_mariaDB)
+                        {
+                            Task<IdentityResult> result = new PasswordValidator
+                            {
+                                RequiredLength = 8,        // Minimum password length
+                                RequireNonLetterOrDigit = true,  // Require at least one non-alphanumeric character
+                                RequireDigit = true,      // Require at least one numeric character
+                                RequireLowercase = true,  // Require at least one lowercase letter
+                                RequireUppercase = true   // Require at least one uppercase letter
+                            }
+                            .ValidateAsync(cc.Password);
+                            if (result.Result.Succeeded == false)
+                            {
+                                throw new Exception("Invalid Password");
+                            }
+                            string passwordHash = new PasswordHasher().HashPassword(cc.Password);
+                            string id = Guid.NewGuid().ToString();
+                            string insertAspNetUser = @"
+                                INSERT INTO AspNetUsers (Id, UserName, PasswordHash, SecurityStamp, Email, EmailConfirmed, PhoneNumber, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled, AccessFailedCount)
+                                VALUES (@iD, @UserName, @PasswordHash, '', '', 1, '', 0, 0, 0, 0)";
+                            MySqlParameter[] parameters = {
+                                new MySqlParameter("@Id", id),
+                                new MySqlParameter("@UserName", cc.Name),
+                                new MySqlParameter("@PasswordHash", passwordHash)
+                            };
+                            MariaDBHelper.ExecuteNonQuery(insertAspNetUser, parameters);
+                        }
+                        else
+                        {
+                            or = await apiHelper.CreateUserAsync(name, pwd);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -134,37 +171,71 @@ namespace B040.Authentication.Controllers
                         Serilog.Log.Warning(or.Message);
                     }
                     if (or.Success == false) { return or; }
-
                 }
-                var u = _context.Users.FirstOrDefault(x => x.UserName == name);
+                ApplicationUser u = new ApplicationUser();
+                if (_mariaDB)
+                {
+                    string selectUserQuery = "SELECT * FROM AspNetUsers WHERE UserName = @UserName";
+                    MySqlParameter[] parameters = {
+                        new MySqlParameter("@UserName", cc.Name)};
+                    u = MariaDBHelper.ExecuteQuery<ApplicationUser>(selectUserQuery, reader =>
+                    {
+                        return new ApplicationUser
+                        {
+                            Id = reader["Id"].ToString(),
+                        };
+                    }, parameters).FirstOrDefault();
+                }
+                else
+                {
+                    u = _context.Users.FirstOrDefault(x => x.UserName == name);
+                }
                 or.Message = u.Id;
                 addRole("Client");
                 void addRole(string roleName)
                 {
-                    var roleId = _context.Roles.FirstOrDefault(x => x.Name == roleName).Id;
-                    var ur = new IdentityUserRole()
+                    if (_mariaDB)
                     {
-                        UserId = u.Id,
-                        RoleId = roleId
-                    };
-                    if (u.Roles.Any(x => x.RoleId == roleId) == false)
+                        string insertRole = @"
+                                INSERT INTO AspNetUserRoles (UserId, RoleId)
+                                VALUES (@id, (SELECT Id FROM AspNetRoles WHERE Name = @RoleName));                            
+                                ";
+                        MySqlParameter[] parameters = {
+                                new MySqlParameter("@Id", u.Id),
+                                new MySqlParameter("@RoleName", roleName)
+                            };
+                        MariaDBHelper.ExecuteNonQuery(insertRole, parameters);
+
+                    }
+                    else
                     {
-                        u.Roles.Add(ur);
-                        _context.SaveChanges();
+                        var roleId = _context.Roles.FirstOrDefault(x => x.Name == roleName).Id;
+                        var ur = new IdentityUserRole()
+                        {
+                            UserId = u.Id,
+                            RoleId = roleId
+                        };
+                        if (u.Roles.Any(x => x.RoleId == roleId) == false)
+                        {
+                            u.Roles.Add(ur);
+                            _context.SaveChanges();
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                or.Message= $"Could not create client {name}, {ex.Message}";
+                or.Message = $"Could not create client {name}, {ex.Message}";
                 or.Success = false;
                 return or;
             }
             return or;
         }
-        [AllowAnonymous]
-        [HttpPost]
-        [Route("Admin/CreateRoles")]
+        // POST api/Authentication/UpdateUser
+ 
+        //[AllowAnonymous]
+        //[HttpPost]
+        //[Route("Admin/CreateRoles")]
         public void CreateRoles()
         {
             process("Admin");
@@ -183,7 +254,28 @@ namespace B040.Authentication.Controllers
         [Route("Admin/ExistsUser")]
         public ExistsModel ExistsUser(UserNamePasswordPairModel model)
         {
-            ApplicationUser u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            ApplicationUser u = null;
+            if (_mariaDB)
+            {
+                string getUser = @"
+                    SELECT Id,PasswordHash, UserName FROM AspNetUsers
+                	WHERE UserName = @UserName";
+                MySqlParameter[] parameters = {
+                    new MySqlParameter("@UserName", model.UserName) };
+                u = MariaDBHelper.ExecuteQuery(getUser, reader =>
+                {
+                    return new ApplicationUser
+                    {
+                        Id = reader["Id"].ToString(),
+                        PasswordHash = reader["PasswordHash"].ToString(),
+                        UserName = reader["UserName"].ToString()
+                    };
+                }, parameters).FirstOrDefault();
+            }
+            else
+            {
+                u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
+            }
             var result = new ExistsModel() { Exists = u != null };
             return result;
         }
@@ -192,7 +284,32 @@ namespace B040.Authentication.Controllers
         [Route("Admin/GetAllRoles")]
         public List<IdentityRole> GetAllRoles()
         {
-            var roles = _context.Roles.ToList();
+            _context.Database.Connection.Open();
+            Serilog.Log.Warning($"State of the connection: {_context.Database.Connection.State}");
+            var roles = new List<IdentityRole>();
+            try
+            {
+                if (_mariaDB)
+                {
+                    string selectGetRoles = "select * from AspNetRoles";
+                    roles = MariaDBHelper.ExecuteQuery(selectGetRoles, reader =>
+                    {
+                        return new IdentityRole
+                        {
+                            Id = reader["Id"].ToString(),
+                            Name = reader["Name"].ToString(),
+                        };
+                    });
+                }
+                else { roles = _context.Roles.ToList(); }
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning($"State of the connection: {_context.Database.Connection.State}");
+                Serilog.Log.Warning($"Error: {ex.Message}");
+                Serilog.Log.Warning(ex.StackTrace);
+                throw;
+            }
             return roles;
         }
         [AllowAnonymous]
@@ -209,12 +326,28 @@ namespace B040.Authentication.Controllers
             Serilog.Log.Warning($"Current User: {WindowsIdentity.GetCurrent().Name}");
             try
             {
-                u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName);
+                if (_mariaDB)
+                {
+                    string selectUserQuery = "SELECT * FROM AspNetUsers WHERE UserName = @UserName";
+                    MySqlParameter[] parameters = {
+                        new MySqlParameter("@UserName", model.UserName)};
+                    u = MariaDBHelper.ExecuteQuery<ApplicationUser>(selectUserQuery, reader =>
+                    {
+                        return new ApplicationUser
+                        {
+                            Id = reader["Id"].ToString(),
+                            UserName = reader["UserName"].ToString(),
+                            PasswordHash = reader["PasswordHash"].ToString(),
+                            // Add more properties if needed
+                        };
+                    }, parameters).FirstOrDefault();
+                }
+                else { u = _context.Users.FirstOrDefault(x => x.UserName == model.UserName); }
             }
             catch (Exception ex)
             {
                 Serilog.Log.Warning($"GetRoles exception: {ex.Message}");
- 
+
                 throw ex;
             }
             if (u == null) { return rv; }
@@ -226,15 +359,31 @@ namespace B040.Authentication.Controllers
             rv.WebAccountId = u.Id;
             rv.WebAccountName = model.UserName;
             rv.Roles = new List<string>();
-            foreach (var r in u.Roles)
+            if (_mariaDB)
             {
-                rv.Roles.Add(_context.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
+                string selectRoles = @"
+                        SELECT NAME FROM AspNetUserRoles,AspNetRoles              
+	                        WHERE ROLEID = ID
+                        	AND USERID = @UserId";
+                MySqlParameter[] parameters = {
+                        new MySqlParameter("@UserId", u.Id)};
+                rv.Roles = MariaDBHelper.ExecuteQuery<string>(selectRoles, reader =>
+                {
+                    return reader["NAME"].ToString();
+                }, parameters);
+            }
+            else
+            {
+                foreach (var r in u.Roles)
+                {
+                    rv.Roles.Add(_context.Roles.FirstOrDefault(x => x.Id == r.RoleId).Name);
+                }
             }
             return rv;
         }
-        [AllowAnonymous]
-        [HttpGet]
-        [Route("Admin/GetAllUsers")]
+        //[AllowAnonymous]
+        //[HttpGet]
+        //[Route("Admin/GetAllUsers")]
         public List<UserWithRolesModel> GetAllUsers()
         {
             var roles = _context.Roles.ToList();
@@ -251,55 +400,55 @@ namespace B040.Authentication.Controllers
                 .ToList();
             return results;
         }
-    //    [AllowAnonymous]
-    //    [HttpPost]
-    //    [Route("Admin/UpdateUser")]
-    //    // Implemented in Account(Controller)
-    //    // For some reason UserManager does not get initialized correctly here 
-    //    // Some of the Password requirement get lost.
-    //    public async Task<OpResult> UpdateUser(UpdateUserDTO updateUser)
-    //    {
-    //        OpResult or = new OpResult();
-    //        if (updateUser == null)
-    //        {
-    //            or.Message = "Null Parameter in UpdateUser Endpoint";
-    //            or.Success = false;
-    //            return or;
-    //        }
-    //        _context = new ApplicationDbContext();
-    //        UserManager<ApplicationUser> _userManager =
-    //            new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(_context));
+        //    [AllowAnonymous]
+        //    [HttpPost]
+        //    [Route("Admin/UpdateUser")]
+        //    // Implemented in Account(Controller)
+        //    // For some reason UserManager does not get initialized correctly here 
+        //    // Some of the Password requirement get lost.
+        //    public async Task<OpResult> UpdateUser(UpdateUserDTO updateUser)
+        //    {
+        //        OpResult or = new OpResult();
+        //        if (updateUser == null)
+        //        {
+        //            or.Message = "Null Parameter in UpdateUser Endpoint";
+        //            or.Success = false;
+        //            return or;
+        //        }
+        //        _context = new ApplicationDbContext();
+        //        UserManager<ApplicationUser> _userManager =
+        //            new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(_context));
 
-    //        var user = await _userManager.FindByIdAsync(updateUser.WebAccountId);
-    //        if (user == null)
-    //        {
-    //            or.Message = "Invalid User Id in Update User Endpoint";
-    //            or.Success = false;
-    //            return or;
-    //        }
-    //        if (user.UserName.ToUpper() != updateUser.WebAccountName.ToUpper())
-    //        {
-    //            user.UserName = updateUser.WebAccountName;
-    //        }
-    //        var result = await _userManager
-    //            .PasswordValidator.ValidateAsync(updateUser.Password);
-    //        if ( result.Succeeded == false)
-    //        {
-    //            or.Message = result.Errors.FirstOrDefault();
-    //            or.Success = false;
-    //            return or;
-    //        }
-    //        var newPasswordHash = _userManager.PasswordHasher.HashPassword(updateUser.Password);
+        //        var user = await _userManager.FindByIdAsync(updateUser.WebAccountId);
+        //        if (user == null)
+        //        {
+        //            or.Message = "Invalid User Id in Update User Endpoint";
+        //            or.Success = false;
+        //            return or;
+        //        }
+        //        if (user.UserName.ToUpper() != updateUser.WebAccountName.ToUpper())
+        //        {
+        //            user.UserName = updateUser.WebAccountName;
+        //        }
+        //        var result = await _userManager
+        //            .PasswordValidator.ValidateAsync(updateUser.Password);
+        //        if ( result.Succeeded == false)
+        //        {
+        //            or.Message = result.Errors.FirstOrDefault();
+        //            or.Success = false;
+        //            return or;
+        //        }
+        //        var newPasswordHash = _userManager.PasswordHasher.HashPassword(updateUser.Password);
 
-    //        user.PasswordHash= newPasswordHash;
-    //        var updateResult = await _userManager.UpdateAsync(user);
-    //        if (updateResult.Succeeded==false)
-    //        {
-    //            or.Message = updateResult.Errors.FirstOrDefault();
-    //            or.Success = false;
-    //            return or;
-    //        }
-    //        return or;
-    //    }
+        //        user.PasswordHash= newPasswordHash;
+        //        var updateResult = await _userManager.UpdateAsync(user);
+        //        if (updateResult.Succeeded==false)
+        //        {
+        //            or.Message = updateResult.Errors.FirstOrDefault();
+        //            or.Success = false;
+        //            return or;
+        //        }
+        //        return or;
+        //    }
     }
 }

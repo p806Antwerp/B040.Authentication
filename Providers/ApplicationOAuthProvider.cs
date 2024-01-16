@@ -10,9 +10,11 @@ using Microsoft.Owin.Security;
 using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.OAuth;
 using B040.Authentication.Models;
+using System.Data.Entity;
 
 namespace B040.Authentication.Providers
 {
+    [DbConfigurationType(typeof(MyDbConfiguration))]
     public class ApplicationOAuthProvider : OAuthAuthorizationServerProvider
     {
         private readonly string _publicClientId;
