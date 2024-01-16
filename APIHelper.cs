@@ -185,7 +185,7 @@ namespace B040.Authentication
             }
             catch (Exception ex)
             {
-                or.Message = $"CreaetUser failed, {userName}, {ex.Message}";
+                or.Message = $"CreateUser failed, {userName}, {ex.Message}";
                 or.Success = false;
                 Log.Warning(or.Message);
                 return or;
