@@ -481,9 +481,9 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>57784</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>https://localhost:14255/</IISUrl>
+          <IISUrl>http://localhost:14257/</IISUrl>
           <OverrideIISAppRootUrl>True</OverrideIISAppRootUrl>
-          <IISAppRootUrl>http://localhost:14255/</IISAppRootUrl>
+          <IISAppRootUrl>http://localhost:14257/</IISAppRootUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
