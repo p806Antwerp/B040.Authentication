@@ -71,7 +71,8 @@ namespace B040.Authentication.Controllers
 			dto.CustomerName = customer.KL_Naam;
 			dto.DayOfWeekInDutch = modDutch.cDagInDeWeek(date);
 			var bestelHeader = await _b040.GetOrderHeaderByCustomerAndDate(customer.KL_ID, date);
-			int orderId = bestelHeader?.BestH_Id ?? 0;
+            Log.Warning($"[{customer.KL_Nummer},{wp.WebAccountId}], {wp.Date.ToString("dd-MMM-yy")}");
+            int orderId = bestelHeader?.BestH_Id ?? 0;
 			if (orderId == 0)
 			{
 				dto.Success = false;
