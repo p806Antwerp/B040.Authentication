@@ -7,7 +7,7 @@ namespace B040.Authentication
 {
     public static class MariaDBHelper
     {
-        private static string ConnectionString { get; } = Environment.GetEnvironmentVariable("B040_AUTH_MYSQL_CONNECTIONSTRING");
+        private static string ConnectionString { get; } = Environment.GetEnvironmentVariable("B040_AUTH_MYSQL_CONNECTIONSTRING",EnvironmentVariableTarget.Machine);
 
         public static List<T> ExecuteQuery<T>(string query, Func<IDataReader, T> mapFunction, params MySqlParameter[] parameters)
         {
