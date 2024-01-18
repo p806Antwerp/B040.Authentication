@@ -28,19 +28,9 @@ namespace B040.Authentication.Models
         static string GetConnectionString()
         {
             if (_connectionString != "*") { return _connectionString; }
-            if (Environment.GetEnvironmentVariable(
-                "B040_ACTIVE_AUTH"
-                ,EnvironmentVariableTarget.Machine)
-                =="MARIADB")
-            {
-                //_connectionString = Environment.GetEnvironmentVariable(
-                //    "B040_AUTH_MYSQL_CONNECTIONSTRING"
-                //    , EnvironmentVariableTarget.Machine);
-                _connectionString = "MARIADB";
-                Serilog.Log.Warning($"Connection (Auth): {_connectionString}");
-                return _connectionString;
-
-            }
+            _connectionString = "MARIADB";
+            Serilog.Log.Warning($"Connection (Auth): {_connectionString}");
+            return _connectionString;
             string connectionStringKey = "";
             string filePath = @"c:\_Config\B040.Ini";
             using (StreamReader reader = new StreamReader(filePath))

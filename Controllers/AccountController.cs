@@ -440,24 +440,17 @@ namespace B040.Authentication.Controllers
                 return or;
             }
             ApplicationUser user = new ApplicationUser();
-            if (_mariaDB)
+            string loadUser = "SELECT * FROM AspNetUsers WHERE Id = @Id";
+            MySqlParameter[] parameters = {
+                   new MySqlParameter("Id", updateUser.WebAccountId)};
+            user = MariaDBHelper.ExecuteQuery<ApplicationUser>(loadUser, reader =>
             {
-                string loadUser = "SELECT * FROM AspNetUsers WHERE Id = @Id";
-                MySqlParameter[] parameters = {
-                        new MySqlParameter("Id", updateUser.WebAccountId)};
-                user = MariaDBHelper.ExecuteQuery<ApplicationUser>(loadUser, reader =>
+                return new ApplicationUser
                 {
-                    return new ApplicationUser
-                    {
-                        Id = reader["Id"].ToString(),
-                        UserName = reader["UserName"].ToString(),
-                    };
-                }, parameters).FirstOrDefault();
-            }
-            else
-            {
-                user = UserManager.FindById(updateUser.WebAccountId);
-            }
+                    Id = reader["Id"].ToString(),
+                    UserName = reader["UserName"].ToString(),
+                };
+            }, parameters).FirstOrDefault();
             if (user == null)
             {
                 or.Message = "Invalid User Id in Update User Endpoint";
@@ -479,42 +472,28 @@ namespace B040.Authentication.Controllers
 
             var newPasswordHash = UserManager.PasswordHasher.HashPassword(updateUser.Password);
             user.PasswordHash = newPasswordHash;
-            if (_mariaDB)
-            {
-                string updateUserSql = @"
-                        UPDATE `Auth-B040`.`AspNetUsers`
-                            SET
-                            `Email` = '',
-                            `EmailConfirmed` = 1,
-                            `PasswordHash` = @PasswordHash,
-                            `SecurityStamp` = '',
-                            `PhoneNumber` = '',
-                            `PhoneNumberConfirmed` = 0,
-                            `TwoFactorEnabled` = 0,
-                            `LockoutEndDateUtc` = 0,
-                            `LockoutEnabled` = 0,
-                            `AccessFailedCount` = 0,
-                            `UserName` = @UserName
-                            WHERE `Id` = @Id;
-                            ";
-                MySqlParameter[] parameters = {
-                                new MySqlParameter("@Id", user.Id),
-                                new MySqlParameter("@UserName", user.UserName),
-                                new MySqlParameter("@PasswordHash", user.PasswordHash)
-                            };
-                MariaDBHelper.ExecuteNonQuery(updateUserSql, parameters);
-            }
-            else
-            {
-                IdentityResult updateResult = new IdentityResult();
-                updateResult = UserManager.Update(user);
-                if (updateResult.Succeeded == false)
-                {
-                    or.Message = updateResult.Errors.FirstOrDefault();
-                    or.Success = false;
-                    return or;
-                }
-            }
+            string updateUserSql = @"
+                    UPDATE `Auth-B040`.`AspNetUsers`
+                        SET
+                        `Email` = '',
+                        `EmailConfirmed` = 1,
+                        `PasswordHash` = @PasswordHash,
+                        `SecurityStamp` = '',
+                        `PhoneNumber` = '',
+                        `PhoneNumberConfirmed` = 0,
+                        `TwoFactorEnabled` = 0,
+                        `LockoutEndDateUtc` = 0,
+                        `LockoutEnabled` = 0,
+                        `AccessFailedCount` = 0,
+                        `UserName` = @UserName
+                        WHERE `Id` = @Id;
+                        ";
+            MySqlParameter[] parametersUpdateUser = {
+                            new MySqlParameter("@Id", user.Id),
+                            new MySqlParameter("@UserName", user.UserName),
+                            new MySqlParameter("@PasswordHash", user.PasswordHash)
+                        };
+            MariaDBHelper.ExecuteNonQuery(updateUserSql, parametersUpdateUser);
             return or;
         }
 
