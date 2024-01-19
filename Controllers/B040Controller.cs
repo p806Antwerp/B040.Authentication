@@ -117,18 +117,20 @@ namespace B040.Authentication.Controllers
 		[Route("UpdateWebOrder")]
 		public async Task<OpResult> UpdateWebOrder(WebOrderDtoShared dto)
 		{
-			// 6301.07 Web Article Management
-			// create a list of the artikels for which we need a notification report
-			List<int> artikelsToNotify = new List<int>();
+            // 6301.07 Web Article Management
+            // create a list of the artikels for which we need a notification report
+            // 6305.01 Notification Management (revisited)
+			// orderlines with quantity = 0 are not considered "to be notified"
+            List<int> artikelsToNotify = new List<int>();
 			try
 			{
                 artikelsToNotify = (List<int>)dto.Repository
-                    .Where(x =>(x.Art_Notify==true) && (x.BestD_Notified == false))
+                    .Where(x =>(x.Art_Notify==true) && (x.BestD_Notified == false) && (x.BestD_Hoev1 !=0))
                     .Select(x => x.BestD_Artikel ?? 0).ToList();
             }
             catch (Exception ex)
 			{
-				Serilog.Log.Error(ex.Message);
+				Serilog.Log.Error($"Articles to Notify: {ex.Message}");
 			}
             Serilog.Log.Warning($"UpdateWebOrder {dto.BestH_Id}");
             BestHModel bH;
@@ -182,7 +184,7 @@ namespace B040.Authentication.Controllers
 							bD.BestD_ID = 0;
                             bD.BestD_BestH = dto.BestH_Id;
                             // 6301.07 Web Article Management
-                            if (l.Art_Notify) 
+                            if (artikelsToNotify.Any(x => x == l.BestD_Artikel))
 							{
 								Serilog.Log.Warning($"Notified set {bD.BestD_Omschrijving}");
 								bD.BestD_Notified = true; 
@@ -241,7 +243,9 @@ namespace B040.Authentication.Controllers
                 opResult = new OpResult();
                 UitzonderlijkDocumentInfoModel info = b040Db.GetUitzonderlijkDocumentInfo(bestHId);
                 List<NotifiedArtikelModel> notifiedArtikels = b040Db.GetNotifiedArtikels(bestHId);
-                if (artikelIds == null) { artikelIds = notifiedArtikels.Select(x => x.BestD_Artikel).ToList(); }
+                if (artikelIds == null) { artikelIds = notifiedArtikels
+						.Where(x=>x.BestD_Hoev1 != 0)
+						.Select(x => x.BestD_Artikel).ToList(); }
                 if (artikelIds == null) { return opResult; }
                 var parameters = new bzUitzonderlijkDocument.uitzondelijkdocument_variabelen();
                 parameters.telefoon = $"Tel: {info.Adr_Telefoon}";
