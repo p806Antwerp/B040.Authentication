@@ -81,14 +81,6 @@ namespace B040.Authentication.Controllers
 				return await dtoTask.Task;
 			}
 			var q = await _b040.GetOrderById(orderId);
-			int count = q.Count();
-			if (count < 1)
-			{
-				dto.Success = false;
-				dto.Message = "Deze bestelling kan niet via Web worden aangepast (minder dan 2 lijnen).";
-				dtoTask.SetResult(dto);
-				return await dtoTask.Task;
-			}
 			bool locked = await Task<bool>.Run(() => b040.ModLock.lLock(0, "BestH", orderId));
 			if (locked==false)
 			{
@@ -100,7 +92,7 @@ namespace B040.Authentication.Controllers
 			dto.Repository = q.CastingList<WebOrderDtoDetailShared, BestDModelX>();
 			dto.BestH_Id = orderId;
 			dto.Info = bestelHeader.BestH_Info;
-			dto.ProductionPlanStartingTime = modB040Config.Generic("PRODUCTIONPLANSTARTINGTIME");
+			dto.InProduction = bestelHeader.BestH_InProduction ?? false;
 			dtoTask.SetResult(dto);
 			return await dtoTask.Task;
 		}
@@ -296,7 +288,7 @@ namespace B040.Authentication.Controllers
 			ModLock.unLock(m.Lock_table, m.Lock_LockedPK ?? 0);
 			if (or.Success == false)
 			{
-				or.Fail("Could not unlock.");
+				or.Fail("De ontgrendeling is mislukt.");
                 Serilog.Log.Warning(or.Message); 
 			}
 			return or;
