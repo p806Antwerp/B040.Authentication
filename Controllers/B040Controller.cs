@@ -246,6 +246,7 @@ namespace B040.Authentication.Controllers
                 parameters.adres = info.Adr_Adres;
                 parameters.klantNummer = $"Klant {info.KL_Nummer}";
                 parameters.info = info.BestH_Info;
+                Serilog.Log.Warning($"Notifying {info.Kl_Naam}");
                 foreach (var n in notifiedArtikels.Where(x => artikelIds.Contains(x.BestD_Artikel)))
                 {
                     parameters.tour = n.BestD_Tour;
@@ -257,8 +258,7 @@ namespace B040.Authentication.Controllers
                     parameters.postnummer_en_gemeente = (string)u.format_postnummer_adres(info.Adr_PostNummer, info.Adr_Gemeente);
                     parameters.datum_levering = u.format_date(info.BestH_DatLevering);
                     u.print(parameters);
-                    Serilog.Log.Warning($"{parameters.artikel_omschrijving} notified.");
-
+                    Serilog.Log.Warning($"==> {parameters.artikel_omschrijving} notified.");
                 }
                 return opResult;
             }
