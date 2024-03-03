@@ -27,7 +27,6 @@ namespace B040.Authentication
 
             app.CreatePerOwinContext(ApplicationDbContext.Create);
             app.CreatePerOwinContext<ApplicationUserManager>(ApplicationUserManager.Create);
-
             // Enable the application to use a cookie to store information for the signed in user
             // and to use a cookie to temporarily store information about a user logging in with a third party login provider
             app.UseCookieAuthentication(new CookieAuthenticationOptions());
@@ -67,6 +66,7 @@ namespace B040.Authentication
             //    ClientId = "",
             //    ClientSecret = ""
             //});
+            Serilog.Log.Warning("End of ConfigureAuth");
         }
     }
 }

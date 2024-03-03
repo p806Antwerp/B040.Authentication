@@ -66,6 +66,7 @@ namespace B040.Authentication.Models
         }
         public static ApplicationDbContext Create()
         {
+            Serilog.Log.Warning("Endof IdentityModels.Create");
             return new ApplicationDbContext();
         }
     }

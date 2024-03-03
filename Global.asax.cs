@@ -29,6 +29,7 @@ namespace B040.Authentication
                     rollingInterval: RollingInterval.Infinite,
                     outputTemplate: "{Timestamp:MMM/dd hh:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
                 .CreateLogger();
+            Log.Logger.Warning("End of Application_Start (log)");
         }
 
         private static string GetLogFilePath()

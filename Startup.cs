@@ -13,6 +13,7 @@ namespace B040.Authentication
         public void Configuration(IAppBuilder app)
         {
             ConfigureAuth(app);
+            Serilog.Log.Warning("End of Startup.Configuration");
         }
     }
 }
