@@ -239,7 +239,7 @@ namespace B040.Authentication.Controllers
 						.Where(x=>x.BestD_Hoev1 != 0)
 						.Select(x => x.BestD_Artikel).ToList(); }
                 if (artikelIds == null) { return opResult; }
-                var parameters = new bzUitzonderlijkDocument.uitzondelijkdocument_variabelen();
+                var parameters = new bzUitzonderlijkDocument.uitzonderlijkdocument_variabelen();
                 parameters.telefoon = $"Tel: {info.Adr_Telefoon}";
                 parameters.komthalen = info.BestH_KomtHalen ? "Komt Halen" : "Sturen";
                 parameters.klant_naam = info.Kl_Naam;
@@ -257,7 +257,7 @@ namespace B040.Authentication.Controllers
                     var u = new bzUitzonderlijkDocument();
                     parameters.postnummer_en_gemeente = (string)u.format_postnummer_adres(info.Adr_PostNummer, info.Adr_Gemeente);
                     parameters.datum_levering = u.format_date(info.BestH_DatLevering);
-                    u.print(parameters);
+                    u.Dispatch(parameters);
                     Serilog.Log.Warning($"==> {parameters.artikel_omschrijving} notified.");
                 }
                 return opResult;

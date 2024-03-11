@@ -462,6 +462,10 @@
     <Content Include="Areas\HelpPage\Views\Help\DisplayTemplates\CollectionModelDescription.cshtml" />
     <Content Include="Areas\HelpPage\Views\Help\DisplayTemplates\ApiGroup.cshtml" />
     <Content Include="Areas\HelpPage\Views\Help\Api.cshtml" />
+    <None Include="Properties\PublishProfiles\PublishToV.pubxml" />
+    <None Include="Properties\PublishProfiles\ToStaging.pubxml" />
+    <None Include="Properties\PublishProfiles\ToWebServer1.pubxml" />
+    <None Include="Properties\PublishProfiles\ToWebServer2.pubxml" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.1.js" />
     <Content Include="Scripts\jquery-3.7.1.min.js" />
