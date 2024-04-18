@@ -475,7 +475,7 @@ namespace B040.Authentication.Controllers
             string updateUserSql = @"
                     UPDATE `Auth-B040`.`AspNetUsers`
                         SET
-                        `Email` = '',
+                        `Email` = @UserName,
                         `EmailConfirmed` = 1,
                         `PasswordHash` = @PasswordHash,
                         `SecurityStamp` = '',
