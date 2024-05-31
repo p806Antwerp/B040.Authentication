@@ -20,20 +20,38 @@ namespace B040.Authentication
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
-            string logFilePath = GetLogFilePath();
+            //string logFilePath = GetLogFilePath();
 
-            Log.Logger = new LoggerConfiguration()
+            Serilog.Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console() // Log messages to the console
+                .Enrich.WithProperty("MachineName",Environment.MachineName)    
                 .WriteTo.File(
-                    logFilePath,
-                    rollingInterval: RollingInterval.Infinite,
-                    outputTemplate: "{Timestamp:MMM/dd hh:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    GetLogsPath(),
+                    rollingInterval: RollingInterval.Day,
+                    outputTemplate: "{Timestamp:ddd HH:mm:ss} [{MachineName} API] {Message:lj}{NewLine:1}{Exception:1}",
+                    shared:true)
                 .CreateLogger();
-            Log.Logger.Warning("End of Application_Start (log)");
+       }
+        static bool IsDevelopment()
+        {
+            return (Environment.MachineName.ToUpper() == "PEPIN");
         }
-
+        public static string GetBackendDriveUNC()
+        {
+            string rv = @"\\RS820\Bread";
+            if (IsDevelopment())
+            {
+                rv = @"\\jaspers\c";
+            }
+            return rv;
+        }
+        public static string GetLogsPath()
+        {
+            return $@"{GetBackendDriveUNC()}\B040\logs\logs-.txt";
+        }
         private static string GetLogFilePath()
         {
+
             string formattedDate = DateTime.Now.ToString("ddd dd/MMM/yy hh:mm:ss");
             formattedDate = formattedDate.Replace('/', '-');
             formattedDate = formattedDate.Replace(':', '-');
