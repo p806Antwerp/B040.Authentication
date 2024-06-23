@@ -124,7 +124,7 @@ namespace B040.Authentication.Controllers
             }
             catch (Exception ex)
 			{
-				Serilog.Log.Error($"Articles to Notify: {ex.Message}");
+				Serilog.Log.Warning($"Articles to Notify: {ex.Message}");
 			}
             Serilog.Log.Warning($"UpdateWebOrder {dto.BestH_Id}");
             BestHModel bH;
