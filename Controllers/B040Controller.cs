@@ -36,7 +36,9 @@ namespace B040.Authentication.Controllers
         public async Task<List<ArtikelModel>> GetAllActiveWebArticles()
         {
             var _b040 = DataAccessB040.GetInstance();
-            return Task.Run(() => _b040.GetAllActiveWebArticles()).Result;
+			Console.Write("test");
+			var t = Task.Run(() => _b040.GetAllActiveWebArticles()).Result;
+			return t;
         }
         [AllowAnonymous]
 		[HttpGet]
