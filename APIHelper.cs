@@ -19,6 +19,8 @@ using Newtonsoft.Json;
 using System.Text;
 using Serilog;
 using b040;
+using B040.Services;
+using B040.Services.Enums;
 
 namespace B040.Authentication
 {
@@ -307,10 +309,28 @@ namespace B040.Authentication
             or.Message = responseData.Message;
             return or;
         }
-        class CreateClientModel
+        public async Task<Result<Dictionary<ConfigurationEnums, string>>> GetConfigurationsB040()
         {
-            public string Name { get; set; }
-            public string Password { get; set; }
-        }
+            try
+            {
+                using (HttpResponseMessage response = await _ApiClient.GetAsync("/api/B040/GetB040Configurations"))
+                {
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var configurationsString = await response.Content.ReadAsStringAsync();
+                        var configurations = JsonConvert.DeserializeObject<Dictionary<ConfigurationEnums, string>>(configurationsString);
+                        return Result<Dictionary<ConfigurationEnums,string>>.Ok(configurations);
+                    }
+                    else
+                    {
+                        return Result<Dictionary<ConfigurationEnums, string>>.Fail($"Failed to get configurations: {response.ReasonPhrase}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Result<Dictionary<ConfigurationEnums, string>>.Fail($"Failed to get configurations: {ex.Message}");
+            }
+        }        
     }
 }
