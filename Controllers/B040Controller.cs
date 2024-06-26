@@ -376,6 +376,7 @@ namespace B040.Authentication.Controllers
 				});
 
             }
+			Serilog.Log.Warning($"Configurations: {cList.Count}");
 			return cList;
         }
     }

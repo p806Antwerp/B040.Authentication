@@ -319,16 +319,19 @@ namespace B040.Authentication
                     {
                         var configurationsString = await response.Content.ReadAsStringAsync();
                         var configurations = JsonConvert.DeserializeObject<List<ConfigurationB040Model>>(configurationsString);
+                        Log.Warning($"Got {configurations.Count} configurations");
                         return Result<List<ConfigurationB040Model>>.Ok(configurations);
                     }
                     else
                     {
+                        Log.Warning($"Failed to get configurations: {response.ReasonPhrase}");
                         return Result<List<ConfigurationB040Model>>.Fail($"Failed to get configurations: {response.ReasonPhrase}");
                     }
                 }
             }
             catch (Exception ex)
             {
+                Log.Warning($"Failed to get configurations: {ex.Message}");
                 return Result<List<ConfigurationB040Model>>.Fail($"Failed to get configurations: {ex.Message}");
             }
         }        
