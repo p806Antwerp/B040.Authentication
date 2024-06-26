@@ -37,7 +37,9 @@ namespace B040.Authentication.Controllers
         public async Task<List<ArtikelModel>> GetAllActiveWebArticles()
         {
             var _b040 = DataAccessB040.GetInstance();
-            return Task.Run(() => _b040.GetAllActiveWebArticles()).Result;
+			Console.Write("test");
+			var t = Task.Run(() => _b040.GetAllActiveWebArticles()).Result;
+			return t;
         }
         [AllowAnonymous]
 		[HttpGet]
@@ -361,10 +363,20 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpGet]
         [Route("GetConfigurationsB040")]
-        public async Task<Dictionary<ConfigurationEnums,string>> GetConfigurationsB040()
+        public async Task<List<ConfigurationB040Model>> GetConfigurationsB040()
         {
 			var c = await Task.Run(() => ConfigurationHelper.GetConfigurations());
-			return c;
+			List<ConfigurationB040Model> cList = new List<ConfigurationB040Model>();
+			foreach (var item in c)
+            {
+				cList.Add(new ConfigurationB040Model()
+				{
+					Key = item.Key.ToString(),
+					Value = item.Value.ToString()
+				});
+
+            }
+			return cList;
         }
     }
 }

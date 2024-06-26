@@ -309,7 +309,7 @@ namespace B040.Authentication
             or.Message = responseData.Message;
             return or;
         }
-        public async Task<Result<Dictionary<ConfigurationEnums, string>>> GetConfigurationsB040()
+        public async Task<Result<List<ConfigurationB040Model>>> GetConfigurationsB040()
         {
             try
             {
@@ -318,18 +318,18 @@ namespace B040.Authentication
                     if (response.IsSuccessStatusCode)
                     {
                         var configurationsString = await response.Content.ReadAsStringAsync();
-                        var configurations = JsonConvert.DeserializeObject<Dictionary<ConfigurationEnums, string>>(configurationsString);
-                        return Result<Dictionary<ConfigurationEnums,string>>.Ok(configurations);
+                        var configurations = JsonConvert.DeserializeObject<List<ConfigurationB040Model>>(configurationsString);
+                        return Result<List<ConfigurationB040Model>>.Ok(configurations);
                     }
                     else
                     {
-                        return Result<Dictionary<ConfigurationEnums, string>>.Fail($"Failed to get configurations: {response.ReasonPhrase}");
+                        return Result<List<ConfigurationB040Model>>.Fail($"Failed to get configurations: {response.ReasonPhrase}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                return Result<Dictionary<ConfigurationEnums, string>>.Fail($"Failed to get configurations: {ex.Message}");
+                return Result<List<ConfigurationB040Model>>.Fail($"Failed to get configurations: {ex.Message}");
             }
         }        
     }

@@ -1,8 +1,8 @@
 using System;
 using System.Web.Http;
-using System.Web.Mvc;
 using B040.Authentication.Areas.HelpPage.ModelDescriptions;
 using B040.Authentication.Areas.HelpPage.Models;
+using Microsoft.AspNetCore.Mvc;
 
 namespace B040.Authentication.Areas.HelpPage.Controllers
 {
