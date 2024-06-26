@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -31,7 +32,17 @@ namespace B040.Authentication
                     outputTemplate: "{Timestamp:ddd HH:mm:ss} [{MachineName} API] {Message:lj}{NewLine:1}{Exception:1}",
                     shared:true)
                 .CreateLogger();
-       }
+            string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+            // Create a FileInfo object for the assembly file
+            FileInfo fileInfo = new FileInfo(assemblyLocation);
+
+            // Get the creation time or last write time
+            DateTime creationTime = fileInfo.CreationTime;
+            DateTime lastWriteTime = fileInfo.LastWriteTime;
+            Log.Warning(fileInfo.FullName);
+            Log.Warning(fileInfo.LastAccessTime.ToString("dd/MMM/yy-hh:mm:ss"));
+
+        }
         static bool IsDevelopment()
         {
             return (Environment.MachineName.ToUpper() == "PEPIN");
@@ -69,6 +80,18 @@ namespace B040.Authentication
             string logFilePath = Path.Combine(@"C:\Docs\", $"logB040Api-{formattedDate}-{zeroFilledSeq}.txt");
             return logFilePath;
         }
+        protected void Application_End()
+        {
+            // This method is called when the application is shutting down
+            Serilog.Log.Information("Application is stopping...");
+
+            // Perform any necessary cleanup or logging here
+            // OnApplicationStopping();
+
+            // Flush the log to ensure all messages are written
+            Serilog.Log.CloseAndFlush();
+        }
     }
+
 }
 

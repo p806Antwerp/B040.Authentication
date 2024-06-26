@@ -15,6 +15,7 @@ using System.Web.Http.Results;
 using System.Web.Http.ExceptionHandling;
 using System.Web.Compilation;
 using Serilog;
+using B040.Services.Enums;
 
 namespace B040.Authentication.Controllers
 {
@@ -347,17 +348,36 @@ namespace B040.Authentication.Controllers
         public async Task<Boolean> GetWebAccountApprovedASync(string webaccountId)
         {
 			bool rv = false;
-            var _b040 = DataAccessB040.GetInstance();
+			var _b040 = DataAccessB040.GetInstance();
 			try
 			{
-                rv = await _b040.GetWebAccountApprovedAsync(webaccountId);
-            }
+				rv = await _b040.GetWebAccountApprovedAsync(webaccountId);
+			}
 			catch (Exception ex)
 			{
 				Log.Warning("GetAccountsApproved Endpoing Failure");
 				Log.Warning(ex.Message);
 			}
 			return rv;
+        }
+        [AllowAnonymous]
+        [HttpGet]
+        [Route("GetConfigurationsB040")]
+        public async Task<List<ConfigurationB040Model>> GetConfigurationsB040()
+        {
+			var c = await Task.Run(() => ConfigurationHelper.GetConfigurations());
+			List<ConfigurationB040Model> cList = new List<ConfigurationB040Model>();
+			foreach (var item in c)
+            {
+				cList.Add(new ConfigurationB040Model()
+				{
+					Key = item.Key.ToString(),
+					Value = item.Value.ToString()
+				});
+
+            }
+			Serilog.Log.Warning($"Configurations: {cList.Count}");
+			return cList;
         }
     }
 }
