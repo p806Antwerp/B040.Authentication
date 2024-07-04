@@ -186,6 +186,14 @@ namespace B040.Authentication.Controllers
 							}
                             cruds.InsertBestD(bD, t);
 						}
+						var log = new B040.Services.Cruds.CrudModels.SaveWebOrderLogModel()
+                        {
+                            Sw_Client = bH.BestH_Klant ?? 0,
+                            Sw_Station = B040.Services.ConfigurationHelper.Get(ConfigurationEnums.MACHINENAME),
+                            Sw_Date = DateTime.Now,
+                            Sw_Time = DateTime.Now.ToString("HH:mm")
+                        };
+						var r = await cruds.InsertSaveWebOrderLogAsync(log, t);
 						t.Commit();
 					}
 					catch (Exception ex)
