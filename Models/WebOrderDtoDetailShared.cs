@@ -25,5 +25,6 @@ namespace B040.Authentication.Models
 		public bool Art_Notify { get; set; }
 		public bool BestD_Notified { get; set; }
 		public bool CuttingEnabled { get; set; }
+		public string BestD_Opschrift { get; set; }
 	}
 }

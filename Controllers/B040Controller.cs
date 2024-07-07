@@ -186,6 +186,14 @@ namespace B040.Authentication.Controllers
 							}
                             cruds.InsertBestD(bD, t);
 						}
+						var log = new B040.Services.Cruds.CrudModels.SaveWebOrderLogModel()
+                        {
+                            Sw_Client = bH.BestH_Klant ?? 0,
+                            Sw_Station = B040.Services.ConfigurationHelper.Get(ConfigurationEnums.MACHINENAME),
+                            Sw_Date = DateTime.Now,
+                            Sw_Time = DateTime.Now.ToString("HH:mm")
+                        };
+						var r = await cruds.InsertSaveWebOrderLogAsync(log, t);
 						t.Commit();
 					}
 					catch (Exception ex)
@@ -248,7 +256,6 @@ namespace B040.Authentication.Controllers
                 parameters.klant_naam = info.Kl_Naam;
                 parameters.adres = info.Adr_Adres;
                 parameters.klantNummer = $"Klant {info.KL_Nummer}";
-                parameters.info = info.BestH_Info;
                 Serilog.Log.Warning($"Notifying {info.Kl_Naam}");
                 foreach (var n in notifiedArtikels.Where(x => artikelIds.Contains(x.BestD_Artikel)))
                 {
@@ -260,10 +267,25 @@ namespace B040.Authentication.Controllers
                     var u = new bzUitzonderlijkDocument();
                     parameters.postnummer_en_gemeente = (string)u.format_postnummer_adres(info.Adr_PostNummer, info.Adr_Gemeente);
                     parameters.datum_levering = u.format_date(info.BestH_DatLevering);
+					var opschrift = (n.BestD_Opschrift == string.Empty) ? string.Empty : $"Opschrift: {n.BestD_Opschrift}";
+                    parameters.info = ConcatenateWithNewLine(info.BestH_Info, opschrift);
+
                     u.Dispatch(parameters);
                     Serilog.Log.Warning($"==> {parameters.artikel_omschrijving} notified.");
                 }
                 return opResult;
+                string ConcatenateWithNewLine(string str1, string str2)
+                {
+                    if (string.IsNullOrEmpty(str1))
+                    {
+                        return str2 ?? string.Empty; // Returns str2 if str1 is empty, but if str2 is also null, it returns an empty string.
+                    }
+                    if (string.IsNullOrEmpty(str2))
+                    {
+                        return str1; // Returns str1 if str2 is empty.
+                    }
+                    return $"{str1}\n{str2}"; // Concatenates str1 and str2 with a newline if neither is empty.
+                }
             }
         }
 		[AllowAnonymous]
