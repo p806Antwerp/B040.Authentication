@@ -164,7 +164,7 @@ namespace B040.Authentication.Controllers
 				{
 					try
 					{
-						Serilog.Log.Warning(bH.ToString());
+						Serilog.Log.Warning("Id:{id}",bH.BestH_Id);
 						cruds.UpdateBestH(bH, t);
                         Serilog.Log.Warning($"==> UpdateBestH {bH.BestH_Id}");
                         // B040 6298.4 delete detail lines.
@@ -172,8 +172,9 @@ namespace B040.Authentication.Controllers
                         Serilog.Log.Warning($"==> DeleteBestDByBEstH_Id {dto.BestH_Id}");
                         foreach (var l in dto.Repository)
 						{
-                           
+							Serilog.Log.Warning("Orderline {l}", l.BestD_Omschrijving);
 							BestDModel bD = l.Casting<BestDModel>();
+							Serilog.Log.Warning("==> Casted ... ");
 							// if (bD.BestD_ID == 0) 
 							// B040 6296.3 add header id to added orderline
 							bD.BestD_ID = 0;
@@ -184,9 +185,12 @@ namespace B040.Authentication.Controllers
 								Serilog.Log.Warning($"Notified set {bD.BestD_Omschrijving}");
 								bD.BestD_Notified = true; 
 							}
+                            Serilog.Log.Warning("==> Inserting ... ");
                             cruds.InsertBestD(bD, t);
-						}
-						var log = new B040.Services.Cruds.CrudModels.SaveWebOrderLogModel()
+                            Serilog.Log.Warning("==> OK");
+
+                        }
+                        var log = new B040.Services.Cruds.CrudModels.SaveWebOrderLogModel()
                         {
                             Sw_Client = bH.BestH_Klant ?? 0,
                             Sw_Station = B040.Services.ConfigurationHelper.Get(ConfigurationEnums.MACHINENAME),
