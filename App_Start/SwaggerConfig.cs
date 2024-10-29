@@ -5,6 +5,8 @@ using Swashbuckle.Application;
 using B040.Authentication.App_Start;
 using b040;
 using Microsoft.VisualBasic.Logging;
+using System.Diagnostics;
+using System.Reflection;
 
 [assembly: PreApplicationStartMethod(typeof(SwaggerConfig), "Register")]
 
@@ -39,7 +41,12 @@ namespace B040.Authentication
                         // hold additional metadata for an API. Version and title are required but you can also provide
                         // additional fields by chaining methods off SingleApiVersion.
                         //
-                        c.SingleApiVersion("v1", "B040 Authentication");
+                        string assemblyPath = Assembly.GetExecutingAssembly().Location;
+                        // Retrieve the file version information
+                        var fileVersion = FileVersionInfo.GetVersionInfo(assemblyPath).FileVersion;
+                        // Split the version and get the third component
+                        var thirdComponent = fileVersion.Split('.')[2];
+                        c.SingleApiVersion("v1", $"B040 Authentication [release: {thirdComponent}]");
 
                         // If you want the output Swagger docs to be indented properly, enable the "PrettyPrint" option.
                         //
