@@ -174,7 +174,7 @@ namespace B040.Authentication.Controllers
 						{
 							Serilog.Log.Warning("Orderline {l}", l.BestD_Omschrijving);
 							BestDModel bD = l.Casting<BestDModel>();
-							Serilog.Log.Warning("==> Casted ... ");
+							// Serilog.Log.Warning("==> Casted ... ");
 							// if (bD.BestD_ID == 0) 
 							// B040 6296.3 add header id to added orderline
 							bD.BestD_ID = 0;
@@ -182,12 +182,12 @@ namespace B040.Authentication.Controllers
                             // 6301.07 Web Article Management
                             if (artikelsToNotify.Any(x => x == l.BestD_Artikel))
 							{
-								Serilog.Log.Warning($"Notified set {bD.BestD_Omschrijving}");
+								Serilog.Log.Warning("==> Notified set");
 								bD.BestD_Notified = true; 
 							}
-                            Serilog.Log.Warning("==> Inserting ... ");
+                            // Serilog.Log.Warning("==> Inserting ... ");
                             cruds.InsertBestD(bD, t);
-                            Serilog.Log.Warning("==> OK");
+                            // Serilog.Log.Warning("==> OK");
 
                         }
                         var log = new B040.Services.Cruds.CrudModels.SaveWebOrderLogModel()
