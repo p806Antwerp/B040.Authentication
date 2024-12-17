@@ -141,7 +141,7 @@ namespace B040.Authentication.Controllers
                         string id = Guid.NewGuid().ToString();
                         string insertAspNetUser = @"
                             INSERT INTO AspNetUsers (Id, UserName, PasswordHash, SecurityStamp, Email, EmailConfirmed, PhoneNumber, PhoneNumberConfirmed, TwoFactorEnabled, LockoutEnabled, AccessFailedCount)
-                            VALUES (@iD, @UserName, @PasswordHash, '', '', 1, '', 0, 0, 0, 0)";
+                            VALUES (@iD, @UserName, @PasswordHash, '', UserName , 1, '', 0, 0, 0, 0)";
                         MySqlParameter[] parameters = {
                             new MySqlParameter("@Id", id),
                             new MySqlParameter("@UserName", cc.Name),
