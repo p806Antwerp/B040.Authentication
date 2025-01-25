@@ -31,34 +31,34 @@ namespace B040.Authentication.Models
             _connectionString = "MARIADB";
             Serilog.Log.Warning($"Connection (Auth): {_connectionString}");
             return _connectionString;
-            string connectionStringKey = "";
-            string filePath = @"c:\_Config\B040.Ini";
-            using (StreamReader reader = new StreamReader(filePath))
-            {
-                string line;
-                string authToken = "AUTH";
-                while ((line = reader.ReadLine()) != null)
-                {
-                    // Split the line into a key and a value
-                    string[] parts = line.Split('=');
-                    if (parts.Length == 2)
-                    {
-                        string key = parts[0].Trim();
-                        string value = parts[1].Trim();
+            //string connectionStringKey = "";
+            //string filePath = @"c:\_Config\B040.Ini";
+            //using (StreamReader reader = new StreamReader(filePath))
+            //{
+            //    string line;
+            //    string authToken = "AUTH";
+            //    while ((line = reader.ReadLine()) != null)
+            //    {
+            //        // Split the line into a key and a value
+            //        string[] parts = line.Split('=');
+            //        if (parts.Length == 2)
+            //        {
+            //            string key = parts[0].Trim();
+            //            string value = parts[1].Trim();
 
-                        // Check if the key is "AUTH"
-                        if (key == authToken)
-                        {
-                            connectionStringKey = value;
-                        }
-                    }
-                }
-            }
-            _connectionString = ConfigurationManager
-                  .ConnectionStrings[connectionStringKey]
-                   .ConnectionString;
-            Serilog.Log.Warning($"Connection (Auth): {_connectionString}");
-            return _connectionString;
+            //            // Check if the key is "AUTH"
+            //            if (key == authToken)
+            //            {
+            //                connectionStringKey = value;
+            //            }
+            //        }
+            //    }
+            //}
+            //_connectionString = ConfigurationManager
+            //      .ConnectionStrings[connectionStringKey]
+            //       .ConnectionString;
+            //Serilog.Log.Warning($"Connection (Auth): {_connectionString}");
+            //return _connectionString;
         }
         public ApplicationDbContext()
             : base(GetConnectionString(), throwIfV1Schema: false)

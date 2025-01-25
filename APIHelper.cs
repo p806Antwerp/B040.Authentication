@@ -165,7 +165,6 @@ namespace B040.Authentication
                 Password = password,
                 ConfirmPassword = password
             };
-            string returnedId;
             try
             {
                 using (HttpResponseMessage response = await _ApiClient.PostAsJsonAsync("api/Account/Register", data))

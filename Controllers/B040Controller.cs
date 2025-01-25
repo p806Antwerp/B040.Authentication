@@ -48,7 +48,7 @@ namespace B040.Authentication.Controllers
 		{
 			int id = int.Parse(idString);
 			var _b040 = DataAccessB040.GetInstance();
-			return Task.Run(() => _b040.GetArtikelXDtoSharedFromId(id)).Result;
+			return await Task.Run(() => _b040.GetArtikelXDtoSharedFromId(id));
 		}
 		[AllowAnonymous]
 		[HttpPost]
@@ -198,9 +198,9 @@ namespace B040.Authentication.Controllers
                             Sw_Time = DateTime.Now.ToString("HH:mm")
                         };
 						var r = await cruds.InsertSaveWebOrderLogAsync(log, t);
-						t.Commit();
-					}
-					catch (Exception ex)
+                        t.Commit();
+                    }
+                    catch (Exception ex)
 					{
 						t.Rollback();
 						string msg = $"UpdateWebOrder Rolled Back. ({dto.CustomerName})";
@@ -220,8 +220,10 @@ namespace B040.Authentication.Controllers
 						  LogAction.logUpdate,
 						  cruds.GetBestHTableName(),
 						  dto.BestH_Id);
-				}
-			}
+                    await b040Db.InsertOrderAuditTrailAsync(bzBestel.cDocnr(dto.BestH_Id), "Web");
+
+                }
+            }
 			catch (Exception ex)
 			{
 				opResult.Fail(ex.Message);
