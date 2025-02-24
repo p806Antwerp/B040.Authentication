@@ -83,7 +83,17 @@ namespace B040.Authentication.Controllers
 				dtoTask.SetResult(dto);
 				return await dtoTask.Task;
 			}
-			var q = await _b040.GetOrderById(orderId);
+			// 6317.09 Adjust Access Restriction and Enforce Web Order Checkes
+			var isRestricted = await _b040.IsCustomerAccessRestrictedAsync(customer.KL_ID);
+			if (isRestricted.Data)
+            {
+                dto.Success = false;
+                dto.Message = $"Uw toegang werd beperkt.";
+                dtoTask.SetResult(dto);
+                return await dtoTask.Task;
+            }
+			//
+            var q = await _b040.GetOrderById(orderId);
 			bool locked = await Task<bool>.Run(() => b040.ModLock.lLock(0, "BestH", orderId));
 			if (locked==false)
 			{
