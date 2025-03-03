@@ -75,6 +75,17 @@ namespace B040.Authentication.Controllers
 			dto.DayOfWeekInDutch = modDutch.cDagInDeWeek(date);
 			var bestelHeader = await _b040.GetOrderHeaderByCustomerAndDate(customer.KL_ID, date);
             Log.Warning($"[{customer.KL_Nummer},{wp.WebAccountId}], {wp.Date.ToString("dd-MMM-yy")}");
+            // 6317.09 Adjust Access Restriction and Enforce Web Order Checkes
+            var isRestricted = await _b040.IsCustomerAccessRestrictedAsync(customer.KL_ID);
+            if (isRestricted.Data)
+            {
+                dto.Success = false;
+                dto.Message = $"Uw toegang werd beperkt.";
+                dtoTask.SetResult(dto);
+                return await dtoTask.Task;
+            }
+
+
             int orderId = bestelHeader?.BestH_Id ?? 0;
 			if (orderId == 0)
 			{
@@ -83,15 +94,7 @@ namespace B040.Authentication.Controllers
 				dtoTask.SetResult(dto);
 				return await dtoTask.Task;
 			}
-			// 6317.09 Adjust Access Restriction and Enforce Web Order Checkes
-			var isRestricted = await _b040.IsCustomerAccessRestrictedAsync(customer.KL_ID);
-			if (isRestricted.Data)
-            {
-                dto.Success = false;
-                dto.Message = $"Uw toegang werd beperkt.";
-                dtoTask.SetResult(dto);
-                return await dtoTask.Task;
-            }
+
 			//
             var q = await _b040.GetOrderById(orderId);
 			bool locked = await Task<bool>.Run(() => b040.ModLock.lLock(0, "BestH", orderId));
