@@ -420,5 +420,30 @@ namespace B040.Authentication.Controllers
 			Serilog.Log.Warning($"Configurations: {cList.Count}");
 			return cList;
         }
+        [AllowAnonymous]
+        [HttpPost]
+        [Route("InsertCall")]
+        public OpResult InsertCall(CallModel model)
+        {
+            var op = new OpResult();
+            try
+            {
+                var _b040 = DataAccessB040.GetInstance();
+                var result = _b040.InsertCall(model.Call_Telephone, model.Call_RawData, model.Call_ConnectionTimeStamp);
+
+                if (!result.Success)
+                {
+                    op.Fail(result.GetMessage());
+                }
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning($"InsertCall failed: {ex.Message}");
+                op.Fail($"Unhandled exception: {ex.Message}");
+            }
+            return op;
+        }
+
+
     }
 }
