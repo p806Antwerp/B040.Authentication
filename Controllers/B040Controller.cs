@@ -129,12 +129,12 @@ namespace B040.Authentication.Controllers
             // create a list of the artikels for which we need a notification report
             // 6305.01 Notification Management (revisited)
 			// orderlines with quantity = 0 are not considered "to be notified"
-            List<int> artikelsToNotify = new List<int>();
+            List<WebOrderDtoDetailShared> weborderdetailsToNotify = new List<WebOrderDtoDetailShared>();
 			try
 			{
-                artikelsToNotify = (List<int>)dto.Repository
-                    .Where(x =>(x.Art_Notify==true) && (x.BestD_Notified == false) && (x.BestD_Hoev1 !=0))
-                    .Select(x => x.BestD_Artikel ?? 0).ToList();
+				weborderdetailsToNotify =dto.Repository
+					.Where(x => (x.Art_Notify == true) && (x.BestD_Notified == false) && (x.BestD_Hoev1 != 0))
+					.ToList();
             }
             catch (Exception ex)
 			{
@@ -185,7 +185,7 @@ namespace B040.Authentication.Controllers
                         Serilog.Log.Warning($"==> DeleteBestDByBEstH_Id {dto.BestH_Id}");
                         foreach (var l in dto.Repository)
 						{
-							Serilog.Log.Warning("Orderline {l}", l.BestD_Omschrijving);
+							// Serilog.Log.Warning("Orderline {l}", l.BestD_Omschrijving);
 							BestDModel bD = l.Casting<BestDModel>();
 							// Serilog.Log.Warning("==> Casted ... ");
 							// if (bD.BestD_ID == 0) 
@@ -193,7 +193,7 @@ namespace B040.Authentication.Controllers
 							bD.BestD_ID = 0;
                             bD.BestD_BestH = dto.BestH_Id;
                             // 6301.07 Web Article Management
-                            if (artikelsToNotify.Any(x => x == l.BestD_Artikel))
+                            if (weborderdetailsToNotify.Any(x => x == l))
 							{
 								Serilog.Log.Warning("==> Notified set");
 								bD.BestD_Notified = true; 
@@ -247,11 +247,11 @@ namespace B040.Authentication.Controllers
 				return opResult;
 			}
             // 6301.07 Web Article Management
-            if (artikelsToNotify.Count()>0)
+            if (weborderdetailsToNotify.Count()>0)
 			{
 				try
 				{
-					opResult = await Task.Run(() => ReportWebOrderNotifications(dto.BestH_Id, artikelsToNotify));
+					opResult = await Task.Run(() => ReportWebOrderNotifications(dto.BestH_Id));
                 }
                 catch (Exception )
 				{
@@ -264,11 +264,6 @@ namespace B040.Authentication.Controllers
             {
                 opResult = new OpResult();
                 UitzonderlijkDocumentInfoModel info = b040Db.GetUitzonderlijkDocumentInfo(bestHId);
-                List<NotifiedArtikelModel> notifiedArtikels = b040Db.GetNotifiedArtikels(bestHId);
-                if (artikelIds == null) { artikelIds = notifiedArtikels
-						.Where(x=>x.BestD_Hoev1 != 0)
-						.Select(x => x.BestD_Artikel).ToList(); }
-                if (artikelIds == null) { return opResult; }
                 var parameters = new bzUitzonderlijkDocument.uitzonderlijkdocument_variabelen();
                 parameters.telefoon = $"Tel: {info.Adr_Telefoon}";
                 parameters.komthalen = info.BestH_KomtHalen ? "Komt Halen" : "Sturen";
@@ -276,13 +271,13 @@ namespace B040.Authentication.Controllers
                 parameters.adres = info.Adr_Adres;
                 parameters.klantNummer = $"Klant {info.KL_Nummer}";
                 Serilog.Log.Warning($"Notifying {info.Kl_Naam}");
-                foreach (var n in notifiedArtikels.Where(x => artikelIds.Contains(x.BestD_Artikel)))
+                foreach (var n in weborderdetailsToNotify)
                 {
                     parameters.tour = n.BestD_Tour;
                     parameters.hoeveelheid = n.BestD_Hoev1.ToString();
                     parameters.artikel_omschrijving = n.BestD_Omschrijving;
                     parameters.voorafdrukken = "Web";
-                    parameters.artikel = n.BestD_Artikel;
+                    parameters.artikel = n.BestD_Artikel ?? 0;
                     var u = new bzUitzonderlijkDocument();
                     parameters.postnummer_en_gemeente = (string)u.format_postnummer_adres(info.Adr_PostNummer, info.Adr_Gemeente);
                     parameters.datum_levering = u.format_date(info.BestH_DatLevering);
