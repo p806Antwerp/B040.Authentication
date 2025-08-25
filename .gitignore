@@ -363,9 +363,6 @@ MigrationBackup/
 FodyWeavers.xsd
 /dbo.AspNetUsers.data.sql
 /Create dbo.AspNetUsers_1.sql
-/Web.Release.config
-/Web.Debug.config
-/Web.config
 /Scripts/jquery-3.6.4.slim.min.map
 /Scripts/jquery-3.6.4.slim.min.js
 /Scripts/jquery-3.6.4.slim.js
@@ -396,3 +393,4 @@ FodyWeavers.xsd
 /Scripts/jquery-3.6.3.intellisense.js
 /b040.Authentication.dacpac
 /MariaDBSqls
+/Web.Release.config
