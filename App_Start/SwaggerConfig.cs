@@ -46,7 +46,7 @@ namespace B040.Authentication
                         var fileVersion = FileVersionInfo.GetVersionInfo(assemblyPath).FileVersion;
                         // Split the version and get the third component
                         var thirdComponent = fileVersion.Split('.')[2];
-                        c.SingleApiVersion("v1", $"B040 Authentication [release: {thirdComponent}]");
+                        c.SingleApiVersion("v1", $"B040 Authentication [release: {thirdComponent}] coucou 2");
 
                         // If you want the output Swagger docs to be indented properly, enable the "PrettyPrint" option.
                         //
