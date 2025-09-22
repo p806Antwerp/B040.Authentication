@@ -233,8 +233,7 @@ namespace B040.Authentication.Controllers
 						  LogAction.logUpdate,
 						  cruds.GetBestHTableName(),
 						  dto.BestH_Id);
-                    await b040Db.InsertOrderAuditTrailAsync(bzBestel.cDocnr(dto.BestH_Id), "Web");
-
+                    b040Db.InsertOrderAuditTrail(bzBestel.cDocnr(dto.BestH_Id), "Web");
                 }
             }
 			catch (Exception ex)
