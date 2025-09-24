@@ -6,6 +6,8 @@ using B040.Authentication.App_Start;
 using Microsoft.VisualBasic.Logging;
 using System.Diagnostics;
 using System.Reflection;
+using Org.BouncyCastle.Crypto.Paddings;
+using System.IO;
 
 [assembly: PreApplicationStartMethod(typeof(SwaggerConfig), "Register")]
 
@@ -42,10 +44,14 @@ namespace B040.Authentication
                         //
                         string assemblyPath = Assembly.GetExecutingAssembly().Location;
                         // Retrieve the file version information
+                        var asm = Assembly.GetExecutingAssembly();               // Web app assembly
+                        var buildTime = File.GetLastWriteTime(asm.Location);
+                        string btTime = buildTime.ToString("dd-MMM-yy HH:mm:ss");
+
                         var fileVersion = FileVersionInfo.GetVersionInfo(assemblyPath).FileVersion;
                         // Split the version and get the third component
                         var thirdComponent = fileVersion.Split('.')[2];
-                        c.SingleApiVersion("v1", $"B040 Authentication [release: {thirdComponent}] coucou 2");
+                        c.SingleApiVersion("v1", $"B040 Authentication [release: {thirdComponent} {btTime}]");
 
                         // If you want the output Swagger docs to be indented properly, enable the "PrettyPrint" option.
                         //
