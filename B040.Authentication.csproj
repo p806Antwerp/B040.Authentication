@@ -607,10 +607,6 @@
       <Project>{972fb6fa-e680-4f65-ba7a-b651a5faba0b}</Project>
       <Name>B040.Services</Name>
     </ProjectReference>
-    <ProjectReference Include="..\b040\b040.vbproj">
-      <Project>{b1ef1f5b-9f5a-484e-86d8-5e82debebfb1}</Project>
-      <Name>b040</Name>
-    </ProjectReference>
     <ProjectReference Include="..\MG.Services\Mg.Services\Mg.Services.csproj">
       <Project>{31d63065-20d4-47ac-8d6f-781e421ecc5c}</Project>
       <Name>Mg.Services</Name>

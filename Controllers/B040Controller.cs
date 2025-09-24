@@ -1,6 +1,5 @@
 ﻿using B040.Services.Models;
 using B040.Services;
-using b040;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +15,8 @@ using System.Web.Http.ExceptionHandling;
 using System.Web.Compilation;
 using Serilog;
 using B040.Services.Enums;
+using B040.Services.Utilities;
+using System.Data.Entity.ModelConfiguration.Configuration;
 
 namespace B040.Authentication.Controllers
 {
@@ -72,7 +73,7 @@ namespace B040.Authentication.Controllers
 				return await dtoTask.Task;
 			}
 			dto.CustomerName = customer.KL_Naam;
-			dto.DayOfWeekInDutch = modDutch.cDagInDeWeek(date);
+			dto.DayOfWeekInDutch = date.ToDutchDayName();
 			var bestelHeader = await _b040.GetOrderHeaderByCustomerAndDate(customer.KL_ID, date);
             Log.Warning($"[{customer.KL_Nummer},{wp.WebAccountId}], {wp.Date.ToString("dd-MMM-yy")}");
             // 6317.09 Adjust Access Restriction and Enforce Web Order Checkes
@@ -84,8 +85,6 @@ namespace B040.Authentication.Controllers
                 dtoTask.SetResult(dto);
                 return await dtoTask.Task;
             }
-
-
             int orderId = bestelHeader?.BestH_Id ?? 0;
 			if (orderId == 0)
 			{
@@ -97,7 +96,7 @@ namespace B040.Authentication.Controllers
 
 			//
             var q = await _b040.GetOrderById(orderId);
-			bool locked = await Task<bool>.Run(() => b040.ModLock.lLock(0, "BestH", orderId));
+			bool locked = await Task<bool>.Run(() => new LockService().Lock(0,"BestH", orderId));
 			if (locked==false)
 			{
 				dto.Success = false;
@@ -117,8 +116,8 @@ namespace B040.Authentication.Controllers
 		[Route("GetNextDeliveryDate")]
 		public async Task<DateTime> GetNextDeliveryDate()
 		{
-			var result = Task.Run(() => bzBestel.dGetLeveringForBestellingDatum()).Result;
-			return result;
+			var result = Task.Run(() => DataAccessB040.GetInstance().GetNextDeliveryDate()).Result;
+            return result;
 		}
 		[AllowAnonymous]
 		[HttpPost]
@@ -143,7 +142,7 @@ namespace B040.Authentication.Controllers
             Serilog.Log.Warning($"UpdateWebOrder {dto.BestH_Id}");
             BestHModel bH;
 			var b040Db = DataAccessB040.GetInstance();
-			modB040Config.lb040Config();
+			// modB040Config.lb040Config();
 			var opResult = new OpResult();
 			int typFId = 1;
 			try
@@ -157,14 +156,12 @@ namespace B040.Authentication.Controllers
                 async Task<double> ComputeTeBetalen()
 				{
 					KlantenModel k = await b040Db.GetKlantenById(bH.BestH_Klant ?? 0);
-					var p = new bzPrice();
-					p.klant = k.KL_Nummer;
+					var p = new PriceService(k.KL_ID);
 					double sumTeBetalen = 0;
 					foreach (var d in dto.Repository)
 					{
-						p.artikel = d.Art_Nr;
-						p.compute(d.BestD_Waarde ?? 0);
-						sumTeBetalen += p.nTeBetalen;
+						var toPay = p.GetPriceFromExtended(d.BestD_Artikel ?? 0, ((decimal)d.BestD_Waarde)).ToPay;
+						sumTeBetalen += (double) toPay;
 					}
 					return sumTeBetalen;
 				}
@@ -225,16 +222,11 @@ namespace B040.Authentication.Controllers
 				if (opResult.Success)
 				{
 					Serilog.Log.Warning("Update succeeded");
-					ModLock.unLock(cruds.GetBestHTableName(), dto.BestH_Id);
-					modLog.nLog(
-						 $"{dto.CustomerName}",
-						  "UpdateWebOrder",
-						  LogType.logNormal,
-						  LogAction.logUpdate,
-						  cruds.GetBestHTableName(),
-						  dto.BestH_Id);
-                    await b040Db.InsertOrderAuditTrailAsync(bzBestel.cDocnr(dto.BestH_Id), "Web");
-
+                    var logService = new LogService();
+                    logService.LogDetailed(dto.CustomerName, "UpdateWebOrder", LogService.LogType.Normal, LogService.LogAction.Update, cruds.GetBestHTableName(), dto.BestH_Id);
+                    var lockService = new LockService();
+					lockService.Unlock(cruds.GetBestHTableName(), dto.BestH_Id);
+                    await b040Db.InsertOrderAuditTrailAsync(b040Db.GetOrderDocnr(dto.BestH_Id), "Web");
                 }
             }
 			catch (Exception ex)
@@ -264,7 +256,7 @@ namespace B040.Authentication.Controllers
             {
                 opResult = new OpResult();
                 UitzonderlijkDocumentInfoModel info = b040Db.GetUitzonderlijkDocumentInfo(bestHId);
-                var parameters = new bzUitzonderlijkDocument.uitzonderlijkdocument_variabelen();
+				var parameters = new NotificationService.UitzonderlijkDocumentVariabelen();
                 parameters.telefoon = $"Tel: {info.Adr_Telefoon}";
                 parameters.komthalen = info.BestH_KomtHalen ? "Komt Halen" : "Sturen";
                 parameters.klant_naam = info.Kl_Naam;
@@ -278,13 +270,13 @@ namespace B040.Authentication.Controllers
                     parameters.artikel_omschrijving = n.BestD_Omschrijving;
                     parameters.voorafdrukken = "Web";
                     parameters.artikel = n.BestD_Artikel ?? 0;
-                    var u = new bzUitzonderlijkDocument();
-                    parameters.postnummer_en_gemeente = (string)u.format_postnummer_adres(info.Adr_PostNummer, info.Adr_Gemeente);
-                    parameters.datum_levering = u.format_date(info.BestH_DatLevering);
+                    var notificationService = new NotificationService();
+                    parameters.postnummer_en_gemeente = (string)notificationService.FormatPostnummerAdres(info.Adr_PostNummer, info.Adr_Gemeente);
+                    parameters.datum_levering = notificationService.FormatDate(info.BestH_DatLevering);
 					var opschrift = (n.BestD_Opschrift == string.Empty) ? string.Empty : $"Opschrift: {n.BestD_Opschrift}";
                     parameters.info = ConcatenateWithNewLine(info.BestH_Info, opschrift);
 
-                    u.Dispatch(parameters);
+                    notificationService.Dispatch(parameters);
                     Serilog.Log.Warning($"==> {parameters.artikel_omschrijving} notified.");
                 }
                 return opResult;
@@ -307,9 +299,10 @@ namespace B040.Authentication.Controllers
 		[Route("LockWebOrder")]
 		public async Task<OpResult> LockWebOrder(LockModel m)
 		{
-			modB040Config.lb040Config();
 			var or = new OpResult();
-			or.Success = ModLock.lLock(0, m.Lock_table, m.Lock_LockedPK ?? 0,"Web");
+			m.Lock_Session = 0;
+			m.Lock_Description = "Web";
+			or.Success = new LockService().Lock(m);
 			if (or.Success == false)
 			{
 				or.Fail("De vergrendeling is mislukt.");
@@ -322,14 +315,8 @@ namespace B040.Authentication.Controllers
 		[Route("UnlockWebOrder")]
 		public async Task<OpResult> UnlockWebOrder(LockModel m)
 		{
-			modB040Config.lb040Config();
 			var or = new OpResult();
-			ModLock.unLock(m.Lock_table, m.Lock_LockedPK ?? 0);
-			if (or.Success == false)
-			{
-				or.Fail("De ontgrendeling is mislukt.");
-                Serilog.Log.Warning(or.Message); 
-			}
+			new LockService().Unlock(m.Lock_table, m.Lock_LockedPK ?? 0);
 			return or;
 		}
         [AllowAnonymous]
@@ -340,44 +327,46 @@ namespace B040.Authentication.Controllers
             var b040Db = DataAccessB040.GetInstance();
 			await Task.Run(() => b040Db.UnlockFromWebAccountId(wp.WebAccountId));
         }
-		/// <summary>
-		/// Quick and dirty implementation for prelaunching purposes.   Customer does not access use the automatisch bestellen process.
-		/// </summary>
-		/// <param name="wp"></param>
-		/// <returns></returns>
-		[AllowAnonymous]
-		[HttpPost]
-		[Route("GenerateWebOrderFromStandards")]
-        public async Task<int> GenerateWebOrderFromStandards(WebOrderParametersModel wp)
-        {
-            modB040Config.lb040Config();
-			modLog.nLog("Api - Create Web Order From Standard requested.");
-            string webAccountId = wp.WebAccountId;
-            DateTime date = wp.Date;
-            string standardCode = wp.StandardCode ?? "1";
-            string dayOfWeekInDutch = modDutch.cDagInDeWeek(date);
-            var _b040 = DataAccessB040.GetInstance();
-            var customer = await _b040.GetWebCustomerByWebAccountId(webAccountId);
-			if (customer == null) {
-                modLog.nLog("  ==> No such customer.");
-                return 0; }
-            modLog.nLog($"  ==> Getting order for {customer.KL_ID} on {date.ToString("dd/MMM/yyyy)")}.","API");
-            var orderId = await _b040.GetOrderIdByCustomerAndDate(customer.KL_ID, date);
-			if (orderId != 0) {
-                modLog.nLog("  ==> Order akready exists.");
-                return 0; }
-            var t = new TaskCompletionSource<int>();
-            var sthId = await _b040.GetStandardHIdByCustomerDayOfWeekCode(customer.KL_ID, dayOfWeekInDutch, standardCode);
-            if (sthId == 0){
-                modLog.nLog("  ==> No standards.");
-                return 0; }
-            var o = new bzBestel();
-            string document = "";
-            bool isParticulier = false;
-            await Task.Run(() => o.createBestelFromStandaard(sthId, date, ref document, ref isParticulier));
-            modLog.nLog($"  ==> Created {document}.");
-            return await _b040.GetOrderIdByDocument(document);
-        }
+        /// <summary>
+        /// Quick and dirty implementation for prelaunching purposes.   Customer does not access use the automatisch bestellen process.
+        /// </summary>
+        /// <param name="wp"></param>
+        /// <returns></returns>
+        /// Commented out 2024-06-10 as not used anymore and depending on b040 (vb).
+		//[AllowAnonymous]
+        //[HttpPost]
+        //[Route("GenerateWebOrderFromStandards")]
+        //      public async Task<int> GenerateWebOrderFromStandards(WebOrderParametersModel wp)
+        //      {
+        //          modB040Config.lb040Config();
+
+        //	Log.Warning("Api - Create Web Order From Standard requested.");
+        //          string webAccountId = wp.WebAccountId;
+        //          DateTime date = wp.Date;
+        //          string standardCode = wp.StandardCode ?? "1";
+        //          string dayOfWeekInDutch = modDutch.cDagInDeWeek(date);
+        //          var _b040 = DataAccessB040.GetInstance();
+        //          var customer = await _b040.GetWebCustomerByWebAccountId(webAccountId);
+        //	if (customer == null) {
+        //              Log.Warning("  ==> No such customer.");
+        //              return 0; }
+        //          Log.Warning($"  ==> Getting order for {customer.KL_ID} on {date.ToString("dd/MMM/yyyy)")}.","API");
+        //          var orderId = await _b040.GetOrderIdByCustomerAndDate(customer.KL_ID, date);
+        //	if (orderId != 0) {
+        //              Log.Warning("  ==> Order akready exists.");
+        //              return 0; }
+        //          var t = new TaskCompletionSource<int>();
+        //          var sthId = await _b040.GetStandardHIdByCustomerDayOfWeekCode(customer.KL_ID, dayOfWeekInDutch, standardCode);
+        //          if (sthId == 0){
+        //              Log.Warning("  ==> No standards.");
+        //              return 0; }
+        //          var o = new bzBestel();
+        //          string document = "";
+        //          bool isParticulier = false;
+        //          await Task.Run(() => o.createBestelFromStandaard(sthId, date, ref document, ref isParticulier));
+        //          Log.Warning($"  ==> Created {document}.");
+        //          return await _b040.GetOrderIdByDocument(document);
+        //      }
         [AllowAnonymous]
         [HttpGet]
         [Route("GetWebAccountApproved")]
@@ -412,7 +401,7 @@ namespace B040.Authentication.Controllers
 				});
 
             }
-			Serilog.Log.Warning($"Configurations: {cList.Count}");
+			Log.Warning($"Configurations: {cList.Count}");
 			return cList;
         }
         [AllowAnonymous]
@@ -433,7 +422,7 @@ namespace B040.Authentication.Controllers
             }
             catch (Exception ex)
             {
-                Serilog.Log.Warning($"InsertCall failed: {ex.Message}");
+                Log.Warning($"InsertCall failed: {ex.Message}");
                 op.Fail($"Unhandled exception: {ex.Message}");
             }
             return op;

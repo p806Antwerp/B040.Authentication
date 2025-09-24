@@ -3,7 +3,6 @@ using WebActivatorEx;
 using B040.Authentication;
 using Swashbuckle.Application;
 using B040.Authentication.App_Start;
-using b040;
 using Microsoft.VisualBasic.Logging;
 using System.Diagnostics;
 using System.Reflection;

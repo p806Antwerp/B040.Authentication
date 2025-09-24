@@ -13,7 +13,6 @@ using System.Web.UI;
 using Mg.Services;
 using B040.Services;
 using B040.Services.Models;
-using b040;
 using System.Web.Security;
 using System.Security.Policy;
 using System.Runtime.InteropServices.ComTypes;
@@ -26,7 +25,6 @@ using System.Data;
 using Microsoft.VisualBasic.ApplicationServices;
 using MySql.Data.MySqlClient;
 using System.Data.SqlClient;
-using static b040.Productielijst;
 
 namespace B040.Authentication.Controllers
 {
