@@ -603,9 +603,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\b040.Services\B040.Services.csproj">
-      <Project>{972fb6fa-e680-4f65-ba7a-b651a5faba0b}</Project>
-      <Name>B040.Services</Name>
+    <ProjectReference Include="..\B040.ExcelAddin\B040.ExcelAddin\B040.ExcelAddIn.csproj">
+      <Project>{3f833656-2747-4266-a64c-6b66e956c3ed}</Project>
+      <Name>B040.ExcelAddIn</Name>
     </ProjectReference>
     <ProjectReference Include="..\MG.Services\Mg.Services\Mg.Services.csproj">
       <Project>{31d63065-20d4-47ac-8d6f-781e421ecc5c}</Project>
