@@ -226,7 +226,7 @@ namespace B040.Authentication.Controllers
                     logService.LogDetailed(dto.CustomerName, "UpdateWebOrder", LogService.LogType.Normal, LogService.LogAction.Update, cruds.GetBestHTableName(), dto.BestH_Id);
                     var lockService = new LockService();
 					lockService.Unlock(cruds.GetBestHTableName(), dto.BestH_Id);
-                    await b040Db.InsertOrderAuditTrailAsync(b040Db.GetOrderDocnr(dto.BestH_Id), "Web");
+                    b040Db.InsertOrderAuditTrail(b040Db.GetOrderDocnr(dto.BestH_Id), "Web");
                 }
             }
 			catch (Exception ex)
