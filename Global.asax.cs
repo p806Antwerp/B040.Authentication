@@ -16,6 +16,13 @@ namespace B040.Authentication
     {
         protected void Application_Start()
         {
+
+            if (!GlobalConfiguration.Configuration.Routes
+                    .Any(rt => (rt.RouteTemplate ?? string.Empty)
+                        .StartsWith("swagger", StringComparison.OrdinalIgnoreCase)))
+            {
+                SwaggerConfig.Register();
+            }
             AreaRegistration.RegisterAllAreas();
             GlobalConfiguration.Configure(WebApiConfig.Register);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
