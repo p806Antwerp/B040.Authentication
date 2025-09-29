@@ -90,7 +90,7 @@ namespace B040.Authentication
         protected void Application_End()
         {
             // This method is called when the application is shutting down
-            Serilog.Log.Information("Application is stopping...");
+            Serilog.Log.Warning("API is stopping...");
 
             // Perform any necessary cleanup or logging here
             // OnApplicationStopping();

@@ -1,7 +1,10 @@
 using B040.Authentication;
 using Swashbuckle.Application;
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Web.Http;
 using WebActivatorEx;
 
@@ -14,7 +17,7 @@ namespace B040.Authentication
         public static void Register()
         {
             var thisAssembly = typeof(SwaggerConfig).Assembly;
-            File.AppendAllText(@"C:\Temp\SwaggerInit.log", $"{DateTime.Now:HH:mm:ss.fff} - SwaggerConfig.Register hit{Environment.NewLine}");
+            // File.AppendAllText(@"C:\Temp\SwaggerInit.log", $"{DateTime.Now:HH:mm:ss.fff} - SwaggerConfig.Register hit{Environment.NewLine}");
             try
             {
                 GlobalConfiguration.Configuration
@@ -36,7 +39,26 @@ namespace B040.Authentication
                     // hold additional metadata for an API. Version and title are required but you can also provide
                     // additional fields by chaining methods off SingleApiVersion.
                     //
-                    c.SingleApiVersion("v1", "B040.Authentication");
+
+                   
+                    // Retrieve the file version information
+                    string btTime = "n/a";
+                    string thirdComponent = "n/a";
+                    try
+                    {
+                        string assemblyPath = Assembly.GetExecutingAssembly().Location;
+                        var asm = Assembly.GetExecutingAssembly(); // Web app assembly
+                        var fileVersionInfo = FileVersionInfo.GetVersionInfo(assemblyPath);
+                        var buildTime = File.GetLastWriteTime(asm.Location);
+                        btTime = buildTime.ToString("dd-MMM-yy HH:mm:ss");
+                        var fileVersion = FileVersionInfo.GetVersionInfo(assemblyPath).FileVersion;
+                        // Split the version and get the third component
+                        thirdComponent = fileVersion.Split('.')[2];
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+                    c.SingleApiVersion("v1", $"B040 Authentication [release: {thirdComponent} {btTime}]");
 
                     // If you want the output Swagger docs to be indented properly, enable the "PrettyPrint" option.
                     //
@@ -259,16 +281,17 @@ namespace B040.Authentication
             }
             catch (Exception ex)
             {
-                File.AppendAllText(@"C:\Temp\SwaggerCrash.log",
-    $"{DateTime.Now:HH:mm:ss.fff} - {ex}{Environment.NewLine}");
+                Serilog.Log.Warning( $"SwaggerConfig.Register hit an exception {ex.Message}");
+    //            File.AppendAllText(@"C:\Temp\SwaggerCrash.log",
+    //$"{DateTime.Now:HH:mm:ss.fff} - {ex}{Environment.NewLine}");
                 throw;
             }
-            var routes = GlobalConfiguration.Configuration.Routes;
-            foreach (var route in routes)
-            {
-                File.AppendAllText(@"C:\Temp\SwaggerRoutes.log",
-                    $"{DateTime.Now:HH:mm:ss} - Route: {route.RouteTemplate}{Environment.NewLine}");
-            }
+            //var routes = GlobalConfiguration.Configuration.Routes;
+            //foreach (var route in routes)
+            //{
+            //    File.AppendAllText(@"C:\Temp\SwaggerRoutes.log",
+            //        $"{DateTime.Now:HH:mm:ss} - Route: {route.RouteTemplate}{Environment.NewLine}");
+            //}
         }
     }
 }
