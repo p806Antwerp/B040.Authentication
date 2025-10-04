@@ -27,34 +27,33 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpGet]
         [Route("GetAllArtikelsFromWebAccountId")]
-        public async Task<List<ArtikelModel>> GetAllArtikelsFromWebAccountId(string webAccountId)
+        public List<ArtikelModel> GetAllArtikelsFromWebAccountId(string webAccountId)
         {
             var _b040 = DataAccessB040.GetInstance();
-            return Task.Run(() =>  _b040.GetArtikelsFromWebAccountId(webAccountId)).Result;
+            return _b040.GetArtikelsFromWebAccountId(webAccountId);
         }
         [AllowAnonymous]
         [HttpGet]
         [Route("GetAllActiveWebArticles")]
-        public async Task<List<ArtikelModel>> GetAllActiveWebArticles()
+        public List<ArtikelModel> GetAllActiveWebArticles()
         {
             var _b040 = DataAccessB040.GetInstance();
-			Console.Write("test");
-			var t = Task.Run(() => _b040.GetAllActiveWebArticles()).Result;
+			var t = _b040.GetAllActiveWebArticles();
 			return t;
         }
         [AllowAnonymous]
 		[HttpGet]
 		[Route("GetArtikelXDtoSharedFromId")]
-		public async Task<ArtikelXDtoShared> GetArtikelXDtoSharedFromId(string idString)
+		public ArtikelXDtoShared GetArtikelXDtoSharedFromId(string idString)
 		{
 			int id = int.Parse(idString);
 			var _b040 = DataAccessB040.GetInstance();
-			return await Task.Run(() => _b040.GetArtikelXDtoSharedFromId(id));
+			return _b040.GetArtikelXDtoSharedFromId(id);
 		}
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("GetWebOrder")]
-		public async Task<WebOrderDtoShared> GetWebOrder(WebOrderParametersModel wp)
+		public WebOrderDtoShared GetWebOrder(WebOrderParametersModel wp)
 		{
 			Log.Warning("GetWebOrder");
 			Log.Warning($"[{wp.WebAccountId}], {wp.Date.ToString("dd-MMM-yy")}");
@@ -64,70 +63,66 @@ namespace B040.Authentication.Controllers
 			var dtoTask = new TaskCompletionSource<WebOrderDtoShared>();
 			var dto = new WebOrderDtoShared();
 			var _b040 = DataAccessB040.GetInstance();
-			var customer = await _b040.GetWebCustomerByWebAccountId(webAccountId);
+			var customer = _b040.GetWebCustomerByWebAccountId(webAccountId);
 			if (customer == null)
 			{
 				dto.Success = false;
 				dto.Message = $"{webAccountId} is ongeldig.";
-				dtoTask.SetResult(dto);
-				return await dtoTask.Task;
+				return dto;
 			}
 			dto.CustomerName = customer.KL_Naam;
 			dto.DayOfWeekInDutch = date.ToDutchDayName();
-			var bestelHeader = await _b040.GetOrderHeaderByCustomerAndDate(customer.KL_ID, date);
+			var bestelHeader = _b040.GetOrderHeaderByCustomerAndDate(customer.KL_ID, date);
             Log.Warning($"[{customer.KL_Nummer},{wp.WebAccountId}], {wp.Date.ToString("dd-MMM-yy")}");
             // 6317.09 Adjust Access Restriction and Enforce Web Order Checkes
-            var isRestricted = await _b040.IsCustomerAccessRestrictedAsync(customer.KL_ID);
+            var isRestricted = _b040.IsCustomerAccessRestricted(customer.KL_ID);
             if (isRestricted.Data)
             {
                 dto.Success = false;
                 dto.Message = $"Uw toegang werd beperkt.";
-                dtoTask.SetResult(dto);
-                return await dtoTask.Task;
+                return dto;
             }
             int orderId = bestelHeader?.BestH_Id ?? 0;
 			if (orderId == 0)
 			{
 				dto.Success = false;
 				dto.Message = $"Uw bestelling voor {date.ToString("dd/MMM/yyyy")} ({dto.DayOfWeekInDutch}) kan nog niet worden aangepast.";
-				dtoTask.SetResult(dto);
-				return await dtoTask.Task;
+				return dto;
 			}
 
 			//
-            var q = await _b040.GetOrderById(orderId);
-			bool locked = await Task<bool>.Run(() => new LockService().Lock(0,"BestH", orderId));
+            var q = _b040.GetOrderById(orderId);
+			bool locked = new LockService().Lock(0,"BestH", orderId);
 			if (locked==false)
 			{
 				dto.Success = false;
 				dto.Message = "Deze bestelling is vergrendeld.";
-				dtoTask.SetResult(dto);
-				return await dtoTask.Task;
+				return dto;
 			}
 			dto.Repository = q.CastingList<WebOrderDtoDetailShared, BestDModelX>();
 			dto.BestH_Id = orderId;
 			dto.Info = bestelHeader.BestH_Info;
 			dto.InProduction = bestelHeader.BestH_InProduction ?? false;
-			dtoTask.SetResult(dto);
-			return await dtoTask.Task;
+			return dto;
 		}
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("GetNextDeliveryDate")]
-		public async Task<DateTime> GetNextDeliveryDate()
+		public DateTime GetNextDeliveryDate()
 		{
-			var result = Task.Run(() => DataAccessB040.GetInstance().GetNextDeliveryDate()).Result;
-            return result;
+			var d  =  DataAccessB040.GetInstance().GetNextDeliveryDate();
+            return d;
 		}
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("UpdateWebOrder")]
-		public async Task<OpResult> UpdateWebOrder(WebOrderDtoShared dto)
+		public OpResult UpdateWebOrder(WebOrderDtoShared dto)
 		{
             // 6301.07 Web Article Management
             // create a list of the artikels for which we need a notification report
             // 6305.01 Notification Management (revisited)
-			// orderlines with quantity = 0 are not considered "to be notified"
+            // orderlines with quantity = 0 are not considered "to be notified"
+            // 6323.01 – Remove Async from Current API
             List<WebOrderDtoDetailShared> weborderdetailsToNotify = new List<WebOrderDtoDetailShared>();
 			try
 			{
@@ -151,11 +146,11 @@ namespace B040.Authentication.Controllers
 				bH = b040Db.GetBestHFromId(dto.BestH_Id, typFId);
                 Serilog.Log.Warning($"==> GetBestHFromId {bH.BestH_Id}");
 
-                double totalTeBetalen = await ComputeTeBetalen();
+                double totalTeBetalen = ComputeTeBetalen();
                 Serilog.Log.Warning($"==> Compute Te Betalen {totalTeBetalen:n2}");
-                async Task<double> ComputeTeBetalen()
+                double ComputeTeBetalen()
 				{
-					KlantenModel k = await b040Db.GetKlantenById(bH.BestH_Klant ?? 0);
+					KlantenModel k = b040Db.GetKlantenById(bH.BestH_Klant ?? 0);
 					var p = new PriceService(k.KL_ID);
 					double sumTeBetalen = 0;
 					foreach (var d in dto.Repository)
@@ -207,7 +202,7 @@ namespace B040.Authentication.Controllers
                             Sw_Date = DateTime.Now,
                             Sw_Time = DateTime.Now.ToString("HH:mm")
                         };
-						var r = await cruds.InsertSaveWebOrderLogAsync(log, t);
+						var r = cruds.InsertSaveWebOrderLog(log, t);
                         t.Commit();
                     }
                     catch (Exception ex)
@@ -243,7 +238,7 @@ namespace B040.Authentication.Controllers
 			{
 				try
 				{
-					opResult = await Task.Run(() => ReportWebOrderNotifications(dto.BestH_Id));
+					opResult = ReportWebOrderNotifications(dto.BestH_Id);
                 }
                 catch (Exception )
 				{
@@ -297,7 +292,7 @@ namespace B040.Authentication.Controllers
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("LockWebOrder")]
-		public async Task<OpResult> LockWebOrder(LockModel m)
+		public OpResult LockWebOrder(LockModel m)
 		{
 			var or = new OpResult();
 			m.Lock_Session = 0;
@@ -313,7 +308,7 @@ namespace B040.Authentication.Controllers
 		[AllowAnonymous]
 		[HttpPost]
 		[Route("UnlockWebOrder")]
-		public async Task<OpResult> UnlockWebOrder(LockModel m)
+		public OpResult UnlockWebOrder(LockModel m)
 		{
 			var or = new OpResult();
 			new LockService().Unlock(m.Lock_table, m.Lock_LockedPK ?? 0);
@@ -322,10 +317,10 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpPost]
         [Route("UnlockWebOrdersFromWebAccountId")]
-        public async Task UnlockWebOrdersFromWebAccountId(WebOrderParametersModel wp)
+        public void UnlockWebOrdersFromWebAccountId(WebOrderParametersModel wp)
 		{
             var b040Db = DataAccessB040.GetInstance();
-			await Task.Run(() => b040Db.UnlockFromWebAccountId(wp.WebAccountId));
+			b040Db.UnlockFromWebAccountId(wp.WebAccountId);
         }
         /// <summary>
         /// Quick and dirty implementation for prelaunching purposes.   Customer does not access use the automatisch bestellen process.
@@ -370,17 +365,17 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpGet]
         [Route("GetWebAccountApproved")]
-        public async Task<Boolean> GetWebAccountApprovedASync(string webaccountId)
+        public Boolean GetWebAccountApproved(string webaccountId)
         {
 			bool rv = false;
 			var _b040 = DataAccessB040.GetInstance();
 			try
 			{
-				rv = await _b040.GetWebAccountApprovedAsync(webaccountId);
+				rv = _b040.GetWebAccountApproved(webaccountId);
 			}
 			catch (Exception ex)
 			{
-				Log.Warning("GetAccountsApproved Endpoing Failure");
+				Log.Warning("GetAccountsApproved Endpoint Failure");
 				Log.Warning(ex.Message);
 			}
 			return rv;
@@ -388,9 +383,9 @@ namespace B040.Authentication.Controllers
         [AllowAnonymous]
         [HttpGet]
         [Route("GetConfigurationsB040")]
-        public async Task<List<ConfigurationB040Model>> GetConfigurationsB040()
+        public List<ConfigurationB040Model> GetConfigurationsB040()
         {
-			var c = await Task.Run(() => ConfigurationHelper.GetConfigurations());
+			var c = ConfigurationHelper.GetConfigurations();
 			List<ConfigurationB040Model> cList = new List<ConfigurationB040Model>();
 			foreach (var item in c)
             {

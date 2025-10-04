@@ -726,4 +726,6 @@
   </Target>
   <Target Name="AfterBuild">
   </Target> -->
+  <Import Project="$(VSToolsPath)\Web\Microsoft.Web.Publishing.targets" Condition="Exists('$(VSToolsPath)\Web\Microsoft.Web.Publishing.targets')" />
+
 </Project>
