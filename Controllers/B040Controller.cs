@@ -247,7 +247,7 @@ namespace B040.Authentication.Controllers
 			};
             return opResult;
             // 6301.07 Web Article Management
-            OpResult ReportWebOrderNotifications(int bestHId, List<int> artikelIds = null)
+            OpResult ReportWebOrderNotifications(int bestHId)
             {
                 opResult = new OpResult();
                 UitzonderlijkDocumentInfoModel info = b040Db.GetUitzonderlijkDocumentInfo(bestHId);
@@ -387,7 +387,7 @@ namespace B040.Authentication.Controllers
         {
 			var c = ConfigurationHelper.GetConfigurations();
 			List<ConfigurationB040Model> cList = new List<ConfigurationB040Model>();
-			foreach (var item in c)
+            foreach (var item in c)
             {
 				cList.Add(new ConfigurationB040Model()
 				{
